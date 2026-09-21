@@ -617,7 +617,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
 
   // ---- lots (endsIn = minutes from load) ----
   var MIN=60000;
-  var LOTS=[
+  var DEFAULT_LOTS=[
     {id:101,cat:"eletronicos",title:"Lote de Eletrônicos — Pallet Misto",cond:"Novo / saldo",items:90,retail:11800,start:2200,cur:3450,inc:50,bids:21,endsIn:9,
       desc:"Pallet misto de eletrônicos de consumo. Provável conteúdo: fones bluetooth, caixas de som portáteis, smartwatches, power banks, carregadores, cabos, controles, mouses e pequenos gadgets. Predominância de itens novos e saldo de estoque, embalagens variadas.",
       spec:{"Estado":"Novo / saldo","Origem":"Saldo de estoque","Mix de itens":"Alto giro","Nota fiscal":"Sim"}},
@@ -655,26 +655,10 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
       desc:"Provável conteúdo: itens de mostruário/vitrine — air fryers, cafeteiras, mixers, aspiradores portáteis e utilidades elétricas. Sem uso ou uso mínimo de exposição; embalagens podem estar abertas.",
       spec:{"Estado":"Mostruário","Uso":"Exposição","Funcionais (estim.)":"~95%","Nota fiscal":"Sim"}}
   ];
-  // finalize
-  var t0=now();
-  LOTS.forEach(function(l){ l.cur=l.start; l.bids=0; l.end=t0+l.endsIn*MIN; l.history=[]; l.mine=false; });
-  var bidsToday=284;
-  function minBidOf(l){ return l.bids===0 ? l.start : l.cur+l.inc; }
-
-  function seedHistory(l){
-    var names=["Rafael M.","Bruna S.","Carlos A.","Déborah L.","Eduardo P.","Fernanda R.","Gustavo T.","Helena V.","Igor N.","Juliana F."];
-    var h=[], v=l.start, n=Math.min(l.bids,7);
-    var span=(l.cur-l.start);
-    for(var i=0;i<n;i++){
-      v += Math.max(l.inc, Math.round(span/n));
-      if(i===n-1) v=l.cur;
-      h.push({name:names[Math.floor(Math.random()*names.length)],val:v,t:t0-(n-i)*(2+Math.random()*8)*MIN,me:false});
-    }
-    return h;
-  }
+  // (os dados agora vêm do painel /admin — ver bloco "shared store" abaixo)
 
   // ---- agenda ----
-  var AGENDA=[
+  var DEFAULT_AGENDA=[
     {cat:"eletronicos",title:"Pregão de Eletrônicos & Informática",when:"Ter, 23/09 · 20h",lots:"16 lotes"},
     {cat:"eletrodomesticos",title:"Leilão de Eletrodomésticos",when:"Qui, 25/09 · 20h",lots:"10 lotes"},
     {cat:"bazar",title:"Bazar Misto — Pallets Surpresa",when:"Sáb, 27/09 · 15h",lots:"12 lotes"},
@@ -682,7 +666,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
   ];
 
   // ---- closed ----
-  var CLOSED=[
+  var DEFAULT_CLOSED=[
     {cat:"eletronicos",title:"Lote de Eletrônicos · ≈80 itens",val:3120},
     {cat:"eletrodomesticos",title:"Pallet de Eletrodomésticos",val:2540},
     {cat:"informatica",title:"Lote de Informática · ≈100 itens",val:3680},
@@ -690,6 +674,27 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
     {cat:"beleza",title:"Lote de Beleza & Cosméticos",val:1640},
     {cat:"ferramentas",title:"Lote de Ferramentas",val:1720}
   ];
+
+  // ---- shared store (controlado pelo painel /admin) ----
+  var STORE_KEY="sbx_store_v1";
+  function loadStore(){ try{var s=localStorage.getItem(STORE_KEY); if(s) return JSON.parse(s);}catch(e){} return null; }
+  var t0=now();
+  var STORE=loadStore();
+  var hasStore=!!(STORE&&STORE.lots&&STORE.lots.length);
+  if(!STORE) STORE={}; if(!STORE.bidsLog) STORE.bidsLog=[];
+  function saveStore(){ if(!hasStore) return; try{localStorage.setItem(STORE_KEY,JSON.stringify(STORE));}catch(e){} }
+  function prep(l,fromStore){ l.cur=l.start; l.bids=0; l.history=[]; l.mine=false;
+    if(!fromStore) l.end=t0+(l.endsIn||60)*MIN; return l; }
+  var LOTS = hasStore
+    ? STORE.lots.filter(function(l){return l.active!==false;}).map(function(l){return prep(Object.assign({},l),true);})
+    : DEFAULT_LOTS.map(function(l){return prep(Object.assign({},l),false);});
+  var AGENDA = (hasStore&&STORE.agenda) ? STORE.agenda : DEFAULT_AGENDA;
+  var CLOSED = (hasStore&&STORE.closed) ? STORE.closed : DEFAULT_CLOSED;
+  var CONFIG = (STORE&&STORE.config) ? STORE.config : {brand:"ShopBox Leilões",whats:"5541999232414"};
+  var bidsToday=284;
+  function minBidOf(l){ return l.bids===0 ? l.start : l.cur+l.inc; }
+  function logBid(l,name,val){ try{ STORE.bidsLog.push({t:now(),id:l.id,lot:l.title,name:name,val:val});
+    if(STORE.bidsLog.length>200) STORE.bidsLog=STORE.bidsLog.slice(-200); saveStore(); }catch(e){} }
 
   // ---- state ----
   var user=null, filter="all", onlyMine=false, openLotId=null;
@@ -873,6 +878,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
     if(amount<min){ toast("Lance mínimo: "+BRL(min),"bad"); return false; }
     l.cur=amount; l.bids++; l.mine=true; bidsToday++;
     l.history.push({name:user.name,val:amount,t:now(),me:true});
+    logBid(l,user.name,amount);
     toast("Lance de "+BRL(amount)+" registrado no lote #"+id+"! Você é o maior lance.","ok");
     updateLotDOM(l);
     if(openLotId===id) renderDetail(l);
@@ -900,7 +906,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
     var min=minBidOf(l);
     var specRows='<li><span class="k">Itens estimados</span><span class="v">≈ '+l.items+' peças</span></li>'
       +'<li><span class="k">Valor de varejo</span><span class="v">~'+BRL(l.retail)+'</span></li>'
-      +Object.keys(l.spec).map(function(k){
+      +Object.keys(l.spec||{}).map(function(k){
         return '<li><span class="k">'+esc(k)+'</span><span class="v">'+esc(l.spec[k])+'</span></li>';
       }).join("");
     var hist=l.history.slice().reverse().slice(0,8).map(function(h){
@@ -1000,6 +1006,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
     var nm=RIVALS[Math.floor(Math.random()*RIVALS.length)];
     l.cur=amt; l.bids++; l.mine=false; bidsToday++;
     l.history.push({name:nm,val:amt,t:now(),me:false});
+    logBid(l,nm,amt);
     updateLotDOM(l);
     if(openLotId===l.id) renderDetail(l);
     if(was_mine) toast("Você foi superado no lote #"+l.id+" por "+nm+" ("+BRL(amt)+").","info");
@@ -1065,6 +1072,7 @@ footer.site{background:var(--ink);color:#d9cbb6;padding-block:46px 30px;margin-t
 
   // ================= INIT =================
   $("yr").textContent=new Date().getFullYear();
+  if(CONFIG&&CONFIG.whats){ try{ Array.prototype.forEach.call(document.querySelectorAll('a[href*="wa.me/"]'),function(a){ a.href=a.href.replace(/wa\.me\/\d+/,"wa.me/"+CONFIG.whats); }); }catch(e){} }
   renderCats(); renderLots(); renderAgenda(); renderClosed(); refreshUser();
   setInterval(tickTimers,1000);
   setInterval(rivalTick,7000);
