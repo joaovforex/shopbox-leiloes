@@ -337,6 +337,20 @@ function main(){
   }
 }
 
+function footer(){
+  var c=S.config||{};
+  var sobre = (c.razao_social||c.cnpj||c.endereco||c.horarios)
+     ? [c.razao_social,c.cnpj?("CNPJ "+c.cnpj):"",c.endereco,c.horarios].filter(Boolean).map(function(x){return '<p>'+esc(x)+'</p>';}).join("")
+     : '<p class="muted" style="color:#8F8676">Dados da empresa (razão social, CNPJ, endereço) a confirmar.</p>';
+  var wa = WA?('<a target="_blank" rel="noopener" href="https://wa.me/'+WA+'">Falar no WhatsApp</a>'):'';
+  return '<footer><div class="wrap foot">'
+    +'<div><div class="footlogo"></div><p style="color:#CFC6B8">Leilões de lotes e pallets para revenda. Consulte as condições de cada lote antes de dar seu lance.</p></div>'
+    +'<div><h4>Navegação</h4><a href="#/">Lotes disponíveis</a><a href="#/como">Como funciona</a><a href="#/agenda">Agenda</a><a href="#/ajuda">Ajuda</a></div>'
+    +'<div><h4>Atendimento</h4>'+wa+(c.email?'<a href="mailto:'+esc(c.email)+'">'+esc(c.email)+'</a>':'')+(c.cidade?'<p>'+esc(c.cidade)+'</p>':'')+'</div>'
+    +'<div><h4>Sobre &amp; regras</h4>'+sobre+'<a href="#/ajuda">Regras e privacidade</a></div>'
+    +'</div><div class="wrap footbar"><span>&copy; '+new Date().getFullYear()+' ShopBox Leilões</span><span>Horários em horário de Brasília (BRT)</span></div></footer>';
+}
+
 /* ===== views ===== */
 function lotCard(l){
   var lf=left(l.encerra_em), foto=(l.fotos&&l.fotos[0]&&l.fotos[0].url)?l.fotos[0].url:"";
