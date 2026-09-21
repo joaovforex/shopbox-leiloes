@@ -635,6 +635,12 @@ footer.site{background:var(--panel);color:var(--panel-ink);padding-block:44px 24
   var LOTS = hasStore
     ? STORE.lots.filter(function(l){return l.active!==false;}).map(function(l){return prep(Object.assign({},l),true);})
     : DEFAULT_LOTS.map(function(l){return prep(Object.assign({},l),false);});
+  // Demo self-heal: se o quadro salvo está inteiramente encerrado (dados antigos no navegador),
+  // rola os horários de encerramento para frente, mantendo os demais dados dos lotes.
+  if(hasStore && LOTS.length && !LOTS.some(function(l){return l.end>t0;})){
+    LOTS.forEach(function(l){ l.end=t0+((l.endsIn||60)*MIN*30); });
+    try{ if(STORE.lots) STORE.lots.forEach(function(sl){ var m=lotById(sl.id); if(m) sl.end=m.end; }); saveStore(); }catch(e){}
+  }
   var AGENDA = (hasStore&&STORE.agenda)?STORE.agenda:DEFAULT_AGENDA;
   var CLOSED = (hasStore&&STORE.closed)?STORE.closed:DEFAULT_CLOSED;
   var CONFIG = (STORE&&STORE.config)?STORE.config:{brand:"ShopBox Leilões",whats:WA};
