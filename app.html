@@ -229,6 +229,14 @@ table.adm th{background:var(--surface-2);font-size:11.5px;text-transform:upperca
 .spin{width:22px;height:22px;border:3px solid var(--line-2);border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 10px}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hide{display:none!important}
+.fotoprev{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.fthumb{position:relative;width:84px;height:66px;border-radius:8px;overflow:hidden;border:1px solid var(--line-2);background:var(--surface-3)}
+.fthumb img{width:100%;height:100%;object-fit:cover}
+.fthumb .capa{position:absolute;left:0;bottom:0;right:0;background:var(--brand);color:#fff;font-size:10px;font-weight:700;text-align:center;padding:1px}
+.fthumb .rmf{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(22,18,13,.8);color:#fff;font-size:14px;line-height:1;cursor:pointer}
+.fadd{width:84px;height:66px;border:1.5px dashed var(--line-2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink-3);font-size:20px;cursor:pointer}
+.fadd span{font-size:11px}
+#fotoInput{font-size:13px}
 </style>
 </head>
 <body>
@@ -585,14 +593,14 @@ function statusChip(s){var m={rascunho:["Rascunho",""],agendado:["Agendado","gol
 function lotForm(l){
   l=l||{};
   function v(k,d){return l[k]!=null?l[k]:(d||"");}
-  return '<form id="lotForm" class="dtsec" data-id="'+esc(l.id||"")+'"><h3>'+(l.id?"Editar lote #"+esc(l.numero):"Novo lote")+'</h3>'
+  return '<form id="lotForm" class="dtsec" data-id="'+esc(l.id||"")+'" data-fotos="'+esc(JSON.stringify((l.fotos||[]).map(function(f){return f.url;})))+'"><h3>'+(l.id?"Editar lote #"+esc(l.numero):"Novo lote")+'</h3>'
     +'<div class="formrow"><div class="field"><label>Número do lote *</label><input name="numero" type="number" value="'+esc(v("numero"))+'" required></div><div class="field"><label>Categoria</label><input name="categoria" value="'+esc(v("categoria"))+'" placeholder="Eletrônicos, Informática…"></div></div>'
     +'<div class="field"><label>Título *</label><input name="titulo" value="'+esc(v("titulo"))+'" required placeholder="Lote de Eletrônicos — Pallet Misto"></div>'
     +'<div class="formrow"><div class="field"><label>Condição</label><input name="condicao" value="'+esc(v("condicao"))+'" placeholder="Novo / Novo/Saldo / Misto"></div><div class="field"><label>Qtd. estimada</label><input name="qtd_estimada" value="'+esc(v("qtd_estimada"))+'" placeholder="≈ 150 itens"></div></div>'
     +'<div class="field"><label>Provável conteúdo</label><textarea name="provavel_conteudo" rows="2">'+esc(v("provavel_conteudo"))+'</textarea></div>'
     +'<div class="field"><label>Descrição</label><textarea name="descricao" rows="2">'+esc(v("descricao"))+'</textarea></div>'
     +'<div class="field"><label>Local de retirada</label><input name="local_retirada" value="'+esc(v("local_retirada"))+'"></div>'
-    +'<div class="field"><label>Fotos (URLs separadas por vírgula)</label><input name="fotos" value="'+esc((l.fotos||[]).map(function(f){return f.url;}).join(", "))+'" placeholder="https://…/foto1.jpg, https://…/foto2.jpg"></div>'
+    +'<div class="field"><label>Fotos do lote</label><div id="fotoPrev" class="fotoprev"></div><input type="file" id="fotoInput" accept="image/*" multiple capture="environment"><div class="muted" style="font-size:12px;margin-top:4px">Envie do computador ou do celular. A primeira foto é a capa. Você pode enviar várias.</div></div>'
     +'<div class="formrow"><div class="field"><label>Lance inicial (R$) *</label><input name="lance_inicial" value="'+esc(l.lance_inicial!=null?(l.lance_inicial/100).toFixed(2).replace(".",","):"")+'" required placeholder="1600,00"></div><div class="field"><label>Incremento (R$) *</label><input name="incremento" value="'+esc(l.incremento!=null?(l.incremento/100).toFixed(2).replace(".",","):"50,00")+'" required></div></div>'
     +'<div class="formrow"><div class="field"><label>Abre em</label><input name="abre_em" type="datetime-local" value="'+esc(toLocalInput(l.abre_em))+'"></div><div class="field"><label>Encerra em *</label><input name="encerra_em" type="datetime-local" value="'+esc(toLocalInput(l.encerra_em))+'"></div></div>'
     +'<div class="field"><label>Status</label><select name="status">'+["rascunho","agendado","aberto","encerrado","cancelado"].map(function(s){return '<option value="'+s+'" '+(v("status","rascunho")===s?"selected":"")+'>'+s+'</option>';}).join("")+'</select></div>'
@@ -754,9 +762,33 @@ function wireAdmin(){
 function wireLotForm(){
   var lf=$("lotForm");if(!lf)return;
   var cancel=lf.querySelector("[data-cancel]");if(cancel)cancel.onclick=function(){S.admTab="lotes";render();};
+  var fotos=[]; try{fotos=JSON.parse(lf.getAttribute("data-fotos")||"[]");}catch(e){fotos=[];}
+  var prev=$("fotoPrev"), inp=$("fotoInput");
+  function renderPrev(){
+    if(!prev)return;
+    prev.innerHTML=fotos.map(function(u,i){return '<div class="fthumb"><img src="'+esc(u)+'" alt="foto '+(i+1)+'">'+(i===0?'<span class="capa">capa</span>':'')+'<button type="button" class="rmf" data-rm="'+i+'" aria-label="Remover">&times;</button></div>';}).join("")
+      + '<label class="fadd" for="fotoInput">+<span>foto</span></label>';
+    prev.querySelectorAll("[data-rm]").forEach(function(b){b.onclick=function(){fotos.splice(+this.getAttribute("data-rm"),1);renderPrev();};});
+  }
+  renderPrev();
+  if(inp)inp.onchange=async function(){
+    var files=Array.prototype.slice.call(this.files||[]); if(!files.length)return;
+    var sub=lf.querySelector('button[type="submit"]'); if(sub)sub.disabled=true;
+    toast("Enviando "+files.length+" foto(s)…");
+    for(var k=0;k<files.length;k++){
+      var file=files[k];
+      var safe=(file.name||"foto").replace(/[^a-zA-Z0-9._-]/g,"_");
+      var path=(Date.now()+"-"+Math.random().toString(36).slice(2))+"-"+safe;
+      var up=await sb.storage.from("lotes").upload(path,file,{cacheControl:"3600",upsert:false});
+      if(up.error){toast("Erro ao enviar "+safe+": "+up.error.message,"bad");continue;}
+      var pub=sb.storage.from("lotes").getPublicUrl(path);
+      if(pub&&pub.data&&pub.data.publicUrl)fotos.push(pub.data.publicUrl);
+    }
+    this.value=""; if(sub)sub.disabled=false; renderPrev(); toast("Fotos enviadas.","ok");
+  };
   lf.onsubmit=async function(e){e.preventDefault();var f=new FormData(lf),id=lf.getAttribute("data-id");
-    var fotos=(f.get("fotos")||"").split(",").map(function(s){return s.trim();}).filter(Boolean).map(function(u){return{url:u};});
-    var obj={numero:parseInt(f.get("numero")),titulo:f.get("titulo"),categoria:f.get("categoria")||null,condicao:f.get("condicao")||null,qtd_estimada:f.get("qtd_estimada")||null,provavel_conteudo:f.get("provavel_conteudo")||null,descricao:f.get("descricao")||null,local_retirada:f.get("local_retirada")||null,fotos:fotos,lance_inicial:reaisToCents(f.get("lance_inicial")),incremento:reaisToCents(f.get("incremento")),abre_em:f.get("abre_em")?new Date(f.get("abre_em")).toISOString():null,encerra_em:f.get("encerra_em")?new Date(f.get("encerra_em")).toISOString():null,status:f.get("status")};
+    var fotosObj=fotos.map(function(u){return{url:u};});
+    var obj={numero:parseInt(f.get("numero")),titulo:f.get("titulo"),categoria:f.get("categoria")||null,condicao:f.get("condicao")||null,qtd_estimada:f.get("qtd_estimada")||null,provavel_conteudo:f.get("provavel_conteudo")||null,descricao:f.get("descricao")||null,local_retirada:f.get("local_retirada")||null,fotos:fotosObj,lance_inicial:reaisToCents(f.get("lance_inicial")),incremento:reaisToCents(f.get("incremento")),abre_em:f.get("abre_em")?new Date(f.get("abre_em")).toISOString():null,encerra_em:f.get("encerra_em")?new Date(f.get("encerra_em")).toISOString():null,status:f.get("status")};
     var r=id?await sb.from("lots").update(obj).eq("id",id):await sb.from("lots").insert(obj);
     if(r.error){toast("Erro: "+(r.error.message||""),"bad");return;}
     await loadLots();S.admTab="lotes";toast(id?"Lote salvo.":"Lote criado.","ok");render();};
