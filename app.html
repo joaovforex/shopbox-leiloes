@@ -341,6 +341,8 @@ function main(){
     case "admin": return isAdmin()?vAdmin():vAuthGate(true);
     case "entrar": return vAuth("entrar");
     case "cadastrar": return vAuth("cadastrar");
+    case "recuperar": return vRecuperar();
+    case "redefinir": return vRedefinir();
     default: return vHome();
   }
 }
@@ -500,8 +502,36 @@ function vAuth(mode){
     +'<div class="err" id="authErr" style="display:none"></div>'
     +'<button class="btn btn-primary btn-block" id="authBtn" type="submit">'+(cad?"Criar conta":"Entrar")+'</button>'
     +'</form>'
+    +(cad?"":'<p style="text-align:center;font-size:13px;margin:12px 0 0"><a href="#/recuperar" style="color:var(--brand);font-weight:600">Esqueci minha senha</a></p>')
     +'<p class="muted" style="text-align:center;font-size:13px;margin:14px 0 0">'+(cad?'Já tem conta? <a href="#/entrar" style="color:var(--brand);font-weight:600">Entrar</a>':'Não tem conta? <a href="#/cadastrar" style="color:var(--brand);font-weight:600">Cadastrar</a>')+'</p>'
     +(cad?'<p class="muted" style="font-size:11.5px;margin-top:10px">Usamos seus dados apenas para operar sua conta e o leilão.</p>':"")
+    +'</div><div style="height:30px"></div></div>';
+}
+/* ---- recuperar senha ---- */
+function vRecuperar(){
+  return '<div class="wrap" style="max-width:440px"><div class="dtsec" style="margin-top:34px;padding:24px">'
+    +'<h2 style="font-size:22px">Recuperar senha</h2>'
+    +'<p class="muted" style="font-size:13px;margin:6px 0 16px">Informe o e-mail da sua conta. Enviaremos um link para você criar uma nova senha.</p>'
+    +'<form id="recForm">'
+    +'<div class="field"><label>E-mail *</label><input name="email" type="email" autocomplete="email" required></div>'
+    +'<div class="err" id="recErr" style="display:none"></div>'
+    +'<div class="ok" id="recOk" style="display:none;background:rgba(34,139,80,.12);color:var(--brand);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px"></div>'
+    +'<button class="btn btn-primary btn-block" id="recBtn" type="submit">Enviar link de recuperação</button>'
+    +'</form>'
+    +'<p class="muted" style="text-align:center;font-size:13px;margin:14px 0 0">Lembrou a senha? <a href="#/entrar" style="color:var(--brand);font-weight:600">Entrar</a></p>'
+    +'</div><div style="height:30px"></div></div>';
+}
+/* ---- redefinir senha (após clicar no link do e-mail) ---- */
+function vRedefinir(){
+  return '<div class="wrap" style="max-width:440px"><div class="dtsec" style="margin-top:34px;padding:24px">'
+    +'<h2 style="font-size:22px">Criar nova senha</h2>'
+    +'<p class="muted" style="font-size:13px;margin:6px 0 16px">Defina uma nova senha para sua conta. Use ao menos 8 caracteres, com letras maiúsculas, minúsculas, número e símbolo.</p>'
+    +'<form id="redForm">'
+    +'<div class="field"><label>Nova senha *</label><input name="senha" type="password" autocomplete="new-password" minlength="8" required></div>'
+    +'<div class="field"><label>Confirmar nova senha *</label><input name="senha2" type="password" autocomplete="new-password" minlength="8" required></div>'
+    +'<div class="err" id="redErr" style="display:none"></div>'
+    +'<button class="btn btn-primary btn-block" id="redBtn" type="submit">Salvar nova senha</button>'
+    +'</form>'
     +'</div><div style="height:30px"></div></div>';
 }
 /* ---- conta ---- */
@@ -808,6 +838,34 @@ function wire(){
     }catch(err){er.textContent=(err&&err.message&&/Invalid login/.test(err.message))?"E-mail ou senha inválidos.":(err.message||"Não foi possível concluir.");er.style.display="block";btn.disabled=false;btn.textContent=cad?"Criar conta":"Entrar";}
   };}
 
+  // recuperar senha (envio de link)
+  var rf=$("recForm");
+  if(rf){rf.onsubmit=async function(e){e.preventDefault();var btn=$("recBtn"),er=$("recErr"),ok=$("recOk");er.style.display="none";ok.style.display="none";btn.disabled=true;btn.textContent="Enviando…";
+    var email=new FormData(rf).get("email");
+    try{
+      var r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname+"#/redefinir"});
+      if(r.error)throw r.error;
+      ok.textContent="Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha. Confira sua caixa de entrada e o spam.";ok.style.display="block";
+      rf.reset();btn.textContent="Link enviado";
+    }catch(err){er.textContent=err.message||"Não foi possível enviar agora.";er.style.display="block";btn.disabled=false;btn.textContent="Enviar link de recuperação";}
+  };}
+
+  // redefinir senha (após clicar no link)
+  var rdf=$("redForm");
+  if(rdf){rdf.onsubmit=async function(e){e.preventDefault();var btn=$("redBtn"),er=$("redErr");er.style.display="none";
+    var f=new FormData(rdf),s1=f.get("senha"),s2=f.get("senha2");
+    if(s1!==s2){er.textContent="As senhas não coincidem.";er.style.display="block";return;}
+    if(!/[a-z]/.test(s1)||!/[A-Z]/.test(s1)||!/[0-9]/.test(s1)||!/[^A-Za-z0-9]/.test(s1)||s1.length<8){er.textContent="A senha deve ter ao menos 8 caracteres, com maiúscula, minúscula, número e símbolo.";er.style.display="block";return;}
+    if(!S.session){er.textContent="Link expirado ou inválido. Peça um novo link de recuperação.";er.style.display="block";return;}
+    btn.disabled=true;btn.textContent="Salvando…";
+    try{
+      var r=await sb.auth.updateUser({password:s1});
+      if(r.error)throw r.error;
+      toast("Senha alterada com sucesso.","ok");
+      await afterAuth();location.hash="#/conta";
+    }catch(err){er.textContent=err.message||"Não foi possível salvar a senha.";er.style.display="block";btn.disabled=false;btn.textContent="Salvar nova senha";}
+  };}
+
   // dados
   var df=$("dadosForm");
   if(df){df.onsubmit=async function(e){e.preventDefault();var f=new FormData(df);var btn=$("dadosBtn");btn.disabled=true;
@@ -882,7 +940,7 @@ async function boot(){
   await loadConfig();await loadLots();await loadAgenda();
   if(S.session){await loadProfile();await loadMine();}
   subscribeRealtime();
-  sb.auth.onAuthStateChange(function(_e,sess){S.session=sess||null;});
+  sb.auth.onAuthStateChange(function(_e,sess){S.session=sess||null;if(_e==="PASSWORD_RECOVERY"){location.hash="#/redefinir";route();}});
   route();
 }
 async function route(){
@@ -894,7 +952,7 @@ async function route(){
   else if(name==="conta"){S.route={name:"conta"};S.acctTab=parts[1]||"visao";if(S.session){await loadMine();await loadProfile();}}
   else if(name==="admin"){S.route={name:"admin"};if(isAdmin()){await loadLots();await loadMine();await loadAgenda();}}
   else if(name==="sair"){await sb.auth.signOut();S.session=null;S.profile=null;S.myBids=[];S.arremates=[];toast("Você saiu da conta.");location.hash="#/";return;}
-  else if(["como","agenda","ajuda","entrar","cadastrar"].indexOf(name)>=0){S.route={name:name};if(name==="agenda")await loadAgenda();}
+  else if(["como","agenda","ajuda","entrar","cadastrar","recuperar","redefinir"].indexOf(name)>=0){S.route={name:name};if(name==="agenda")await loadAgenda();}
   else {S.route={name:"home"};}
   render();window.scrollTo(0,0);
 }
