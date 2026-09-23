@@ -422,7 +422,7 @@ function vLote(){
   var mine=S.session&&l.vencedor_id===S.session.user.id;
   var box = enc
     ? '<div class="lbl">Resultado</div><div class="price">'+brl(curVal(l))+'</div><div class="muted" style="font-size:13px;margin-top:4px">'+(l.total_lances>0?(l.total_lances+" lance(s) · encerrado"):"Encerrado sem lances")+'</div>'
-      +(mine?'<div class="note ok" style="margin-top:12px"><svg><use href="#i-check"/></svg><span>Você arrematou este lote. Veja os próximos passos em <b>Minha conta → Arremates</b>.</span></div>':'')
+      +(mine?'<div class="note ok" style="margin-top:12px"><svg><use href="#i-check"/></svg><span>Você arrematou este lote. Nossa equipe entra em contato para combinar pagamento e retirada em <b>até 5 horas em dias úteis</b> (finais de semana e feriados: até 2 dias úteis). Acompanhe em <b>Minha conta → Arremates</b>.</span></div>':'')
     : '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="lbl">'+(l.total_lances>0?"Lance atual":"Lance inicial")+'</div><div class="price">'+brl(curVal(l))+'</div></div>'
         +'<div style="text-align:right"><div class="lbl">Encerra em</div><div class="mono" style="font-weight:700;font-size:18px;'+(lf.urgent?"color:var(--danger)":"")+'" data-cd="'+esc(l.encerra_em)+'">'+lf.txt+'</div></div></div>'
       +'<div class="muted" style="font-size:12.5px;margin-top:6px">Próximo lance mínimo: <b class="mono">'+brl(minBid(l))+'</b> · incremento de '+brl(l.incremento)+'</div>'
@@ -476,7 +476,8 @@ function vAgenda(){
 }
 function vAjuda(){
   var faq=[["Como dou um lance?","Abra o lote, confira as condições, defina o valor (igual ou acima do próximo mínimo) e confirme na tela de revisão. É preciso ter conta."],
-    ["Como funciona o pagamento?","Nesta fase, o pagamento do arremate é combinado por Pix e WhatsApp com a ShopBox. As instruções aparecem em Minha conta → Arremates."],
+    ["Ganhei o leilão, e agora?","Se você for o vencedor, nossa equipe entra em contato para combinar pagamento e retirada em até 5 horas em dias úteis. Em finais de semana e feriados, o contato acontece em até 2 dias úteis."],
+    ["Como funciona o pagamento?","Nesta fase, o pagamento do arremate é combinado por Pix e WhatsApp com a PalletBox. As instruções aparecem em Minha conta → Arremates."],
     ["Posso retirar ou recebo em casa?","As condições de retirada/entrega são informadas na página de cada lote e confirmadas após o arremate."],
     ["O cronômetro pode mudar?","Sim: lances nos minutos finais podem estender o encerramento por alguns minutos, para dar chance de resposta (anti-sniping)."],
     ["Meus dados estão seguros?","Usamos seu nome, e-mail e WhatsApp apenas para operar sua conta e o leilão. Veja a política de privacidade quando disponível."]];
@@ -535,6 +536,7 @@ function vRedefinir(){
     +'</div><div style="height:30px"></div></div>';
 }
 /* ---- conta ---- */
+function slaNote(){return '<div class="note ok" style="margin-bottom:14px"><svg><use href="#i-check"/></svg><span>Ganhou o lote? Nossa equipe entra em contato para combinar pagamento e retirada em <b>até 5 horas em dias úteis</b>. Em finais de semana e feriados, em <b>até 2 dias úteis</b>.</span></div>';}
 function vConta(){
   var tabs=[["visao","Visão geral","i-grid"],["lances","Meus lances","i-gavel"],["arremates","Arremates","i-check"],["pagamentos","Pagamentos","i-card"],["retiradas","Retiradas","i-truck"],["dados","Meus dados","i-user"],["ajuda","Ajuda","i-help"]];
   var side='<div class="acct-side">'+tabs.map(function(t){return '<a href="#/conta/'+t[0]+'" class="'+(S.acctTab===t[0]?"on":"")+'"><svg><use href="#'+t[2]+'"/></svg>'+t[1]+'</a>';}).join("")+'</div>';
@@ -553,7 +555,7 @@ function contaMain(){
   }
   if(t==="lances"){var r=S.myBids.map(bidRow).join("");return '<h2 style="font-size:22px;margin-bottom:14px">Meus lances</h2>'+(r||'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Nenhum lance ainda</b>Seus lances aparecerão aqui.</div>');}
   if(t==="arremates"){var r=S.arremates.map(function(a){return '<div class="listrow"><div class="mini"><svg style="width:18px;height:18px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-check"/></svg></div><div class="g"><div class="t">'+esc(a.lots&&a.lots.titulo||"Lote")+'</div><div class="s">#'+esc(a.lots&&a.lots.numero)+' · '+brl(a.valor)+' · '+statusLabel(a.status)+'</div></div><a class="btn btn-line btn-sm" target="_blank" rel="noopener" href="https://wa.me/'+WA+'?text='+encodeURIComponent("Olá! Sobre meu arremate do lote #"+(a.lots&&a.lots.numero)+" ("+(a.lots&&a.lots.titulo)+")")+'">Falar no WhatsApp</a></div>';}).join("");
-    return '<h2 style="font-size:22px;margin-bottom:14px">Arremates</h2>'+(r||'<div class="empty"><svg><use href="#i-check"/></svg><b>Nenhum arremate ainda</b>Quando você vencer um lote, ele aparece aqui com os próximos passos.</div>');}
+    return '<h2 style="font-size:22px;margin-bottom:14px">Arremates</h2>'+slaNote()+(r||'<div class="empty"><svg><use href="#i-check"/></svg><b>Nenhum arremate ainda</b>Quando você vencer um lote, ele aparece aqui com os próximos passos.</div>');}
   if(t==="pagamentos"){
     var pend=S.arremates.filter(function(a){return a.status==="aguardando_pagamento";});
     var body=pend.length?pend.map(function(a){return '<div class="dtsec"><h3>Lote #'+esc(a.lots&&a.lots.numero)+' — '+esc(a.lots&&a.lots.titulo)+'</h3>'
