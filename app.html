@@ -271,7 +271,7 @@ var sb = window.supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true
 var MIN=60000;
 /* ===== estado ===== */
 var S = { session:null, profile:null, lots:[], config:{}, agenda:[], route:{name:"home"},
-          curLot:null, curBids:[], myBids:[], arremates:[], acctTab:"visao", admTab:"lotes", cat:"", q:"" };
+          curLot:null, curBids:[], myBids:[], arremates:[], acctTab:"visao", admTab:"metricas", cat:"", q:"", metrics:null, metricsLoading:false, admLotBidsFor:null, admLotBids:null, admLotBidsLoading:false };
 
 /* ===== util ===== */
 function $(id){return document.getElementById(id);}
@@ -592,16 +592,18 @@ window.__render=render;
 <script>
 /* ===== ADMIN view ===== */
 function vAdmin(){
-  var tabs=[["lotes","Lotes"],["novo","Novo lote"],["arremates","Arremates"],["agenda","Agenda"],["config","Dados & regras"]];
+  var tabs=[["metricas","Métricas"],["lotes","Lotes"],["novo","Novo lote"],["arremates","Arremates"],["agenda","Agenda"],["config","Dados & regras"]];
   var head='<div class="wrap"><div class="sechead" style="margin-top:22px"><div class="k">Administração</div><h2>Painel PalletBox Leilões</h2><p>Gerencie lotes, arremates, agenda e os dados da empresa.</p></div>'
     +'<div class="adm-tabs">'+tabs.map(function(t){return '<button data-adm="'+t[0]+'" class="'+(S.admTab===t[0]?"on":"")+'">'+t[1]+'</button>';}).join("")+'</div>';
   var body="";
-  if(S.admTab==="lotes"){
-    body='<table class="adm"><thead><tr><th>#</th><th>Título</th><th>Status</th><th>Atual</th><th>Encerra</th><th></th></tr></thead><tbody>'
-      +(S.lots.length?S.lots.map(function(l){return '<tr><td class="mono">'+esc(l.numero)+'</td><td>'+esc(l.titulo)+'</td><td>'+statusChip(l.status)+'</td><td class="mono">'+brl(curVal(l))+'</td><td>'+esc(l.encerra_em?fmtDT(l.encerra_em):"—")+'</td>'
+  if(S.admTab==="metricas"){ body=admMetrics(); }
+  else if(S.admTab==="lotes" && S.admLotBidsFor){ body=admLotBidsView(); }
+  else if(S.admTab==="lotes"){
+    body='<table class="adm"><thead><tr><th>#</th><th>Título</th><th>Status</th><th>Atual</th><th>Lances</th><th>Encerra</th><th></th></tr></thead><tbody>'
+      +(S.lots.length?S.lots.map(function(l){return '<tr><td class="mono">'+esc(l.numero)+'</td><td>'+esc(l.titulo)+'</td><td>'+statusChip(l.status)+'</td><td class="mono">'+brl(curVal(l))+'</td><td><button class="btn btn-ghost btn-sm" data-lotbids="'+l.id+'">'+(l.total_lances||0)+' ver</button></td><td>'+esc(l.encerra_em?fmtDT(l.encerra_em):"—")+'</td>'
         +'<td style="white-space:nowrap">'+(l.status==="rascunho"||l.status==="agendado"?'<button class="btn btn-primary btn-sm" data-open="'+l.id+'">Abrir</button> ':"")
         +(l.status==="aberto"?'<button class="btn btn-line btn-sm" data-close="'+l.id+'">Encerrar</button> ':"")
-        +'<button class="btn btn-ghost btn-sm" data-edit="'+l.id+'">Editar</button></td></tr>';}).join(""):'<tr><td colspan="6" class="muted" style="text-align:center;padding:20px">Nenhum lote cadastrado.</td></tr>')
+        +'<button class="btn btn-ghost btn-sm" data-edit="'+l.id+'">Editar</button></td></tr>';}).join(""):'<tr><td colspan="7" class="muted" style="text-align:center;padding:20px">Nenhum lote cadastrado.</td></tr>')
       +'</tbody></table>';
   } else if(S.admTab==="novo"){ body=lotForm(null); }
   else if(S.admTab==="arremates"){
@@ -623,6 +625,68 @@ function vAdmin(){
   return head+body+'<div style="height:30px"></div></div>';
 }
 function statusChip(s){var m={rascunho:["Rascunho",""],agendado:["Agendado","gold"],aberto:["Aberto","ok"],encerrado:["Encerrado",""],cancelado:["Cancelado","warn"]}[s]||[s,""];return '<span class="tag '+m[1]+'">'+m[0]+'</span>';}
+/* ===== ADMIN: métricas + lances por lote ===== */
+async function loadMetrics(){
+  S.metricsLoading=true;
+  try{ var r=await sb.rpc("admin_metrics"); if(r.error) throw r.error; S.metrics=(typeof r.data==="string")?JSON.parse(r.data):r.data; }
+  catch(e){ S.metrics={__err:(e&&e.message)||"erro"}; }
+  S.metricsLoading=false;
+  if(S.route.name==="admin"&&S.admTab==="metricas") render();
+}
+function kpi(lbl,val){return '<div class="tile"><div class="lbl">'+lbl+'</div><div class="num">'+val+'</div></div>';}
+function trendChart(trend){
+  if(!trend||!trend.length) return '<p class="muted" style="font-size:13px;margin:0">Sem dados ainda.</p>';
+  var max=1; trend.forEach(function(d){max=Math.max(max,d.lances||0,d.arremates||0);});
+  var n=trend.length, W=Math.max(320,n*42), H=150, pad=26, step=(W-pad*2)/n, bw=step*0.34;
+  var bars=trend.map(function(d,i){
+    var x=pad+i*step;
+    var hl=Math.round((d.lances||0)/max*(H-pad*2)); var ha=Math.round((d.arremates||0)/max*(H-pad*2));
+    var day=(d.dia||"").slice(8,10);
+    return '<rect x="'+x.toFixed(1)+'" y="'+(H-pad-hl)+'" width="'+bw.toFixed(1)+'" height="'+hl+'" rx="2" fill="#FC3C01"></rect>'
+      +'<rect x="'+(x+bw+2).toFixed(1)+'" y="'+(H-pad-ha)+'" width="'+bw.toFixed(1)+'" height="'+ha+'" rx="2" fill="#FCBC01"></rect>'
+      +'<text x="'+(x+bw).toFixed(1)+'" y="'+(H-8)+'" font-size="9" fill="#8C857A" text-anchor="middle">'+day+'</text>';
+  }).join("");
+  return '<div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" width="100%" style="min-width:320px;max-width:'+W+'px">'+bars+'</svg></div>'
+    +'<div style="display:flex;gap:16px;font-size:12px;color:var(--ink-2);margin-top:4px"><span><span style="display:inline-block;width:10px;height:10px;background:#FC3C01;border-radius:2px;margin-right:5px;vertical-align:middle"></span>Lances</span><span><span style="display:inline-block;width:10px;height:10px;background:#FCBC01;border-radius:2px;margin-right:5px;vertical-align:middle"></span>Arremates</span></div>';
+}
+function admMetrics(){
+  if(!S.metrics && !S.metricsLoading){ setTimeout(loadMetrics,0); }
+  if(S.metricsLoading || !S.metrics){ return '<div class="empty"><svg><use href="#i-grid"/></svg><b>Carregando métricas…</b>Um instante.</div>'; }
+  var m=S.metrics;
+  if(m.__err){ return '<div class="note"><svg><use href="#i-help"/></svg><span>Não foi possível carregar as métricas ('+esc(m.__err)+'). Confirme que sua conta é admin.</span></div><button class="btn btn-line btn-sm" data-metrics-refresh="1" style="margin-top:10px">Tentar de novo</button>'; }
+  var k=m.kpis||{};
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">Visão geral</h3><button class="btn btn-line btn-sm" data-metrics-refresh="1">Atualizar</button></div>';
+  var kpis='<div class="tiles">'+kpi("Lotes abertos",k.lotes_abertos||0)+kpi("Lotes encerrados",k.lotes_encerrados||0)+kpi("Total de lances",k.total_lances||0)+kpi("Participantes",k.participantes_unicos||0)+kpi("Arremates",k.arremates_total||0)+kpi("Valor arrematado",brl(k.valor_arrematado||0))+'</div>';
+  var abs=m.arremates_by_status||[];
+  var stat='<div class="dtsec" style="margin-top:16px"><h3>Arremates por situação</h3>'+(abs.length?('<table class="adm"><thead><tr><th>Situação</th><th>Qtd.</th><th>Valor</th></tr></thead><tbody>'+abs.map(function(a){return '<tr><td>'+statusLabel(a.status)+'</td><td class="mono">'+a.qtd+'</td><td class="mono">'+brl(a.valor)+'</td></tr>';}).join("")+'</tbody></table>'):'<p class="muted" style="font-size:13px;margin:0">Nenhum arremate ainda.</p>')+'</div>';
+  var tl=m.top_lots||[];
+  var rank='<div class="dtsec" style="margin-top:16px"><h3>Lotes mais disputados</h3>'+(tl.length?('<table class="adm"><thead><tr><th>#</th><th>Título</th><th>Lances</th><th>Atual</th></tr></thead><tbody>'+tl.map(function(l){return '<tr><td class="mono">'+esc(l.numero)+'</td><td>'+esc(l.titulo)+'</td><td class="mono">'+(l.total_lances||0)+'</td><td class="mono">'+brl(l.total_lances>0?l.lance_atual:l.lance_inicial)+'</td></tr>';}).join("")+'</tbody></table>'):'<p class="muted" style="font-size:13px;margin:0">Nenhum lote ainda.</p>')+(m.lotes_sem_lances!=null?('<p class="muted" style="font-size:12px;margin:8px 0 0">'+m.lotes_sem_lances+' lote(s) sem lances.</p>'):"")+'</div>';
+  var trend='<div class="dtsec" style="margin-top:16px"><h3>Últimos 14 dias</h3>'+trendChart(m.trend)+'</div>';
+  return head+kpis+stat+rank+trend;
+}
+async function loadLotBids(lotId, silent){
+  if(!silent){ S.admLotBidsLoading=true; }
+  try{ var r=await sb.rpc("admin_bids_for_lot",{p_lot:String(lotId)}); if(r.error) throw r.error; S.admLotBids=r.data||[]; }
+  catch(e){ S.admLotBids={__err:(e&&e.message)||"erro"}; }
+  S.admLotBidsLoading=false;
+  if(!silent && S.route.name==="admin") render();
+}
+function admLotBidsView(){
+  var l=(S.lots||[]).filter(function(x){return x.id===S.admLotBidsFor;})[0]||{};
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><button class="btn btn-ghost btn-sm" data-lotbids-back="1">← Voltar</button><button class="btn btn-line btn-sm" data-lotbids-refresh="'+esc(S.admLotBidsFor)+'">Atualizar</button></div>'
+    +'<h3 style="margin:0 0 4px">Lances — #'+esc(l.numero||"")+' '+esc(l.titulo||"")+'</h3>'
+    +'<p class="muted" style="font-size:13px;margin:0 0 12px">'+(l.status==="aberto"?'<span class="tag ok">Ao vivo</span> atualiza sozinho a cada novo lance. ':'')+'Atual: '+brl(curVal(l))+' · '+(l.total_lances||0)+' lance(s).</p>';
+  var bids=S.admLotBids;
+  if(S.admLotBidsLoading || bids==null){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Carregando lances…</b></div>'; }
+  if(bids.__err){ return head+'<div class="note"><svg><use href="#i-help"/></svg><span>Não foi possível carregar ('+esc(bids.__err)+'). Confirme que sua conta é admin.</span></div>'; }
+  if(!bids.length){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Sem lances ainda</b>Quando alguém der um lance, aparece aqui na hora.</div>'; }
+  var rows=bids.map(function(b,i){
+    var wa=(b.whatsapp||"").replace(/\D/g,"");
+    var walink=wa?('<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="https://wa.me/'+(wa.length<=11?"55"+wa:wa)+'">WhatsApp</a>'):'';
+    return '<tr><td class="mono">'+(i+1)+'</td><td>'+esc(b.nome||"—")+'</td><td class="mono">'+esc(b.whatsapp||"—")+'</td><td class="mono">'+brl(b.valor)+'</td><td>'+esc(fmtDT(b.criado_em))+'</td><td>'+walink+'</td></tr>';
+  }).join("");
+  return head+'<table class="adm"><thead><tr><th>#</th><th>Participante</th><th>WhatsApp</th><th>Lance</th><th>Quando</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
 function lotForm(l){
   l=l||{};
   function v(k,d){return l[k]!=null?l[k]:(d||"");}
@@ -687,6 +751,7 @@ async function refreshCurrent(){
   if(S.route.name==="lote"&&S.curLot){await loadLot(S.curLot.numero);}
   await loadLots();
   if(S.session)await loadMine();
+  if(S.admLotBidsFor){ await loadLotBids(S.admLotBidsFor, true); }
   render();
 }
 
@@ -886,7 +951,11 @@ function renderHomeGridOnly(){ // re-render só a home para busca fluida
   if(val!=null){var q=$("q");if(q){q.focus();q.value=val;try{q.setSelectionRange(pos,pos);}catch(e){}}}
 }
 function wireAdmin(){
-  document.querySelectorAll("[data-adm]").forEach(function(b){b.onclick=function(){S.admTab=this.getAttribute("data-adm");render();};});
+  document.querySelectorAll("[data-adm]").forEach(function(b){b.onclick=function(){S.admTab=this.getAttribute("data-adm");S.admLotBidsFor=null;S.admLotBids=null;render();};});
+  document.querySelectorAll("[data-lotbids]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=this.getAttribute("data-lotbids");S.admLotBids=null;S.admLotBidsLoading=true;render();loadLotBids(S.admLotBidsFor);};});
+  document.querySelectorAll("[data-lotbids-back]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=null;S.admLotBids=null;render();};});
+  document.querySelectorAll("[data-lotbids-refresh]").forEach(function(b){b.onclick=function(){S.admLotBidsLoading=true;render();loadLotBids(this.getAttribute("data-lotbids-refresh"));};});
+  document.querySelectorAll("[data-metrics-refresh]").forEach(function(b){b.onclick=function(){S.metrics=null;S.metricsLoading=true;render();loadMetrics();};});
   document.querySelectorAll("[data-open]").forEach(function(b){b.onclick=async function(){await sb.from("lots").update({status:"aberto"}).eq("id",this.getAttribute("data-open"));await loadLots();toast("Lote aberto.","ok");render();};});
   document.querySelectorAll("[data-close]").forEach(function(b){b.onclick=async function(){await sb.from("lots").update({status:"encerrado"}).eq("id",this.getAttribute("data-close"));await sb.rpc("close_expired_lots");await loadLots();await loadMine();toast("Lote encerrado.","ok");render();};});
   document.querySelectorAll("[data-edit]").forEach(function(b){b.onclick=function(){var l=S.lots.filter(function(x){return x.id===this.getAttribute("data-edit");}.bind(this))[0];S.admTab="novo";render();var host=document.querySelector(".adm-tabs");if(host){var f=document.createElement("div");}
