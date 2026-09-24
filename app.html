@@ -164,6 +164,13 @@ header.top{position:sticky;top:0;z-index:40;background:var(--surface);border-bot
 .lb .gnav:hover{background:rgba(255,255,255,.28)}
 .lbhint{color:rgba(255,255,255,.55);font-size:12px;text-align:center;padding:0 0 12px}
 .desc{white-space:pre-line;word-break:break-word}
+.btn-del{color:var(--danger)!important}
+.btn-del:hover{background:var(--danger-soft,rgba(200,30,30,.1))!important}
+.btn-danger{background:var(--danger);color:#fff;border:0}
+.btn-danger:disabled{opacity:.45;cursor:not-allowed}
+.dellist{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-sm);margin:10px 0}
+.dellist div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.dellist div:last-child{border-bottom:0}
 .sheethead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .sheethead p{margin:2px 0 0;font-size:13px}
 .sheetframe{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;height:min(70vh,560px)}
@@ -316,7 +323,7 @@ var ERR={nao_autenticado:"Entre na sua conta para dar um lance.",lote_inexistent
 
 /* ===== data ===== */
 async function loadConfig(){try{var r=await sb.from("config").select("*").eq("id",1).maybeSingle();if(r.data){S.config=r.data;if(r.data.whatsapp)WA=String(r.data.whatsapp).replace(/\D/g,"")||WA;}}catch(e){}}
-async function loadLots(){var r=await sb.from("lots").select("*").in("status",["aberto","agendado","encerrado"]).order("status",{ascending:true}).order("encerra_em",{ascending:true});S.lots=r.data||[];}
+async function loadLots(){var r=await sb.from("lots").select("*").in("status",["aberto","agendado","encerrado"]).order("status",{ascending:true}).order("encerra_em",{ascending:true});S.lots=r.data||[];if(isAdmin()){var ra=await sb.from("lots").select("*").order("numero",{ascending:false});if(!ra.error)S.admLots=ra.data||[];}}
 async function loadLot(numero){var r=await sb.from("lots").select("*").eq("numero",numero).maybeSingle();S.curLot=r.data||null;if(S.curLot){var b=await sb.from("bids").select("valor,criado_em,user_id").eq("lot_id",S.curLot.id).order("criado_em",{ascending:false}).limit(12);S.curBids=b.data||[];}}
 async function loadAgenda(){var r=await sb.from("agenda").select("*").eq("status","previsto").order("quando",{ascending:true});S.agenda=r.data||[];}
 async function loadProfile(){if(!S.session){S.profile=null;return;}var r=await sb.from("profiles").select("*").eq("id",S.session.user.id).maybeSingle();S.profile=r.data||null;}
@@ -883,7 +890,7 @@ function openPayModal(id){
 /* ===== ADMIN: controle avançado de lotes ===== */
 function admLotesView(){
   var q=(S.admLotQ||"").toLowerCase(), sf=S.admLotStatus||"";
-  var lots=(S.lots||[]).filter(function(l){
+  var lots=(S.admLots||S.lots||[]).filter(function(l){
     if(sf && l.status!==sf) return false;
     if(q && ((l.numero+" "+(l.titulo||"")+" "+(l.categoria||"")).toLowerCase().indexOf(q)<0)) return false;
     return true;
@@ -894,12 +901,12 @@ function admLotesView(){
     +'<div class="search" style="max-width:260px"><svg><use href="#i-search"/></svg><input id="admLotQ" placeholder="Buscar lote…" value="'+esc(S.admLotQ)+'"></div>'
     +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select id="admLotStatus">'+statuses.map(function(s){return '<option value="'+s[0]+'" '+(sf===s[0]?"selected":"")+'>'+s[1]+'</option>';}).join("")+'</select>'
     +'<button class="btn btn-ghost btn-sm" data-lots-export="1">Exportar CSV</button></div></div>';
-  var massbar = nsel>0 ? '<div class="note ok" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>'+nsel+' selecionado(s)</span><span style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" data-mass="abrir">Abrir</button><button class="btn btn-line btn-sm" data-mass="encerrar">Encerrar</button><button class="btn btn-ghost btn-sm" data-mass="limpar">Limpar</button></span></div>' : '';
+  var massbar = nsel>0 ? '<div class="note ok" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span>'+nsel+' selecionado(s)</span><span style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" data-mass="abrir">Abrir</button><button class="btn btn-line btn-sm" data-mass="encerrar">Encerrar</button><button class="btn btn-ghost btn-sm btn-del" data-mass="excluir">Excluir</button><button class="btn btn-ghost btn-sm" data-mass="limpar">Limpar</button></span></div>' : '';
   if(!lots.length){ return bar+massbar+'<div class="empty"><svg><use href="#i-grid"/></svg><b>Nenhum lote</b>Ajuste a busca/filtro ou cadastre um lote em "Novo lote".</div>'; }
   var rows=lots.map(function(l){
     var canBulk=(l.status==="aberto"||l.status==="agendado"||l.status==="rascunho");
     return '<tr>'
-      +'<td>'+(canBulk?'<input type="checkbox" class="lotchk" data-chk="'+l.id+'" '+(sel[l.id]?"checked":"")+'>':'')+'</td>'
+      +'<td><input type="checkbox" class="lotchk" data-chk="'+l.id+'" '+(sel[l.id]?"checked":"")+' aria-label="Selecionar lote '+esc(l.numero)+'"></td>'
       +'<td class="mono">'+esc(l.numero)+(l.destaque?' ★':'')+'</td><td>'+esc(l.titulo)+'</td><td>'+statusChip(l.status)+'</td>'
       +'<td class="mono">'+brl(curVal(l))+'</td>'
       +'<td><button class="btn btn-ghost btn-sm" data-lotbids="'+l.id+'">'+(l.total_lances||0)+' ver</button></td>'
@@ -909,7 +916,8 @@ function admLotesView(){
         +(l.status==="aberto"?'<button class="btn btn-line btn-sm" data-close="'+l.id+'">Encerrar</button> <button class="btn btn-ghost btn-sm" data-extend="'+l.id+'">+15min</button> ':"")
         +'<button class="btn btn-ghost btn-sm" data-feature="'+l.id+'" data-on="'+(l.destaque?1:0)+'">'+(l.destaque?'★ Remover':'Destacar')+'</button> '
         +'<button class="btn btn-ghost btn-sm" data-dup="'+l.id+'">Duplicar</button> '
-        +'<button class="btn btn-ghost btn-sm" data-edit="'+l.id+'">Editar</button>'
+        +'<button class="btn btn-ghost btn-sm" data-edit="'+l.id+'">Editar</button> '
+        +'<button class="btn btn-ghost btn-sm btn-del" data-del="'+l.id+'" title="Excluir lote">Excluir</button>'
       +'</td></tr>';
   }).join("");
   return bar+massbar+'<div style="overflow-x:auto"><table class="adm"><thead><tr><th></th><th>#</th><th>Título</th><th>Status</th><th>Atual</th><th>Lances</th><th>Encerra</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
@@ -935,6 +943,48 @@ function lotForm(l){
 function toLocalInput(iso){if(!iso)return "";var d=new Date(iso);var p=function(n){return(n<10?"0":"")+n;};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());}
 </script>
 <script>
+/* ===== excluir lotes (admin) ===== */
+function openDeleteLots(ids){
+  var all=S.admLots||S.lots||[];
+  var lots=ids.map(function(id){return all.filter(function(x){return x.id===id;})[0];}).filter(Boolean);
+  if(!lots.length)return;
+  var arr=(S.admArrem||[]);
+  function hasArr(l){return arr.some(function(a){return a.lot_id===l.id;})||(l.status==="encerrado"&&l.vencedor_id);}
+  var risky=lots.filter(function(l){return (l.total_lances||0)>0||hasArr(l)||l.status==="aberto";});
+  var nL=lots.reduce(function(s,l){return s+(l.total_lances||0);},0);
+  var old=document.getElementById("delModal"); if(old)old.remove();
+  var m=document.createElement("div");m.className="modal";m.id="delModal";
+  m.innerHTML='<div class="box"><div class="mhead"><h3>'+(lots.length>1?'Excluir '+lots.length+' lotes':'Excluir lote #'+esc(lots[0].numero))+'</h3><button class="mclose" id="dmClose" aria-label="Fechar"><svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-close"/></svg></button></div>'
+    +'<div class="mbody">'
+    +'<p style="margin:0 0 4px;font-size:14px">Esta ação é <b>permanente</b> e não pode ser desfeita.</p>'
+    +'<div class="dellist">'+lots.map(function(l){return '<div><span><b class="mono">#'+esc(l.numero)+'</b> '+esc(l.titulo||"")+'</span><span class="muted" style="white-space:nowrap">'+esc(l.status)+' · '+(l.total_lances||0)+' lance(s)'+(hasArr(l)?' · arremate':'')+'</span></div>';}).join("")+'</div>'
+    +(risky.length?'<div class="note warn" style="margin-bottom:10px"><svg><use href="#i-info"/></svg><span>'+(nL?'Serão apagados também <b>'+nL+' lance(s)</b>':'Lotes com atividade')+(risky.some(hasArr)?' e o(s) <b>arremate(s)</b> e registro de pagamento vinculados':'')+(risky.some(function(l){return l.status==="aberto";})?'. Há lote <b>aberto</b>; participantes perderão seus lances':'')+'. Para confirmar, digite <b>EXCLUIR</b> abaixo.</span></div>'
+      +'<input id="dmType" autocomplete="off" placeholder="Digite EXCLUIR" style="margin-bottom:10px">':'')
+    +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" id="dmCancel">Cancelar</button><button class="btn btn-danger btn-sm" id="dmGo" '+(risky.length?'disabled':'')+'>Excluir definitivamente</button></div>'
+    +'</div></div>';
+  document.body.appendChild(m);
+  function close(){document.removeEventListener("keydown",key);m.remove();}
+  function key(e){if(e.key==="Escape")close();}
+  document.addEventListener("keydown",key);
+  m.addEventListener("click",function(e){if(e.target===m)close();});
+  document.getElementById("dmClose").onclick=close; document.getElementById("dmCancel").onclick=close;
+  var go=document.getElementById("dmGo"), ty=document.getElementById("dmType");
+  if(ty){ty.oninput=function(){go.disabled=this.value.trim().toUpperCase()!=="EXCLUIR";};ty.focus();}
+  go.onclick=async function(){
+    go.disabled=true; go.textContent="Excluindo…";
+    var r=await sb.rpc("admin_delete_lots",{p_ids:lots.map(function(l){return l.id;})});
+    if(r.error){go.disabled=false;go.textContent="Excluir definitivamente";toast("Erro ao excluir: "+(r.error.message||""),"bad");return;}
+    var d=(typeof r.data==="string")?JSON.parse(r.data):(r.data||{});
+    close();
+    lots.forEach(function(l){ if(S.admSel)delete S.admSel[l.id]; });
+    if(S.admLotBidsFor&&lots.some(function(l){return l.id===S.admLotBidsFor;})){S.admLotBidsFor=null;S.admLotBids=null;}
+    S.metrics=null; S.admArrem=null;
+    await loadLots(); try{await loadMine();}catch(e){} try{loadArrem();}catch(e){}
+    toast((d.lotes||lots.length)+" lote(s) excluído(s)"+(d.lances?" · "+d.lances+" lance(s)":"")+(d.arremates?" · "+d.arremates+" arremate(s)":"")+".","ok");
+    render();
+  };
+}
+
 /* ===== bid review modal ===== */
 function openBidReview(l,valorCents){
   var m=document.createElement("div");m.className="modal";m.id="bidModal";
@@ -1223,11 +1273,12 @@ function wireAdmin(){
   var lq=$("admLotQ");if(lq){lq.oninput=function(){S.admLotQ=this.value;};}
   var ls=$("admLotStatus");if(ls){ls.onchange=function(){S.admLotStatus=this.value;render();};}
   document.querySelectorAll("[data-chk]").forEach(function(c){c.onchange=function(){S.admSel[this.getAttribute("data-chk")]=this.checked;render();};});
-  document.querySelectorAll("[data-mass]").forEach(function(b){b.onclick=async function(){var act=this.getAttribute("data-mass");if(act==="limpar"){S.admSel={};render();return;}var ids=Object.keys(S.admSel).filter(function(k){return S.admSel[k];});if(!ids.length)return;if(!confirm((act==="abrir"?"Abrir":"Encerrar")+" "+ids.length+" lote(s)?"))return;var st=act==="abrir"?"aberto":"encerrado";for(var i=0;i<ids.length;i++){await sb.from("lots").update({status:st}).eq("id",ids[i]);}if(act==="encerrar"){await sb.rpc("close_expired_lots");}S.admSel={};await loadLots();await loadMine();toast("Lotes atualizados.","ok");render();};});
-  document.querySelectorAll("[data-extend]").forEach(function(b){b.onclick=async function(){var id=this.getAttribute("data-extend");var l=(S.lots||[]).filter(function(x){return x.id===id;})[0];if(!l)return;var base=l.encerra_em?new Date(l.encerra_em):new Date();if(base<new Date())base=new Date();var novo=new Date(base.getTime()+15*60000).toISOString();var r=await sb.from("lots").update({encerra_em:novo}).eq("id",id);if(r.error){toast("Erro.","bad");return;}await loadLots();toast("Prazo estendido em 15 min.","ok");render();};});
+  document.querySelectorAll("[data-mass]").forEach(function(b){b.onclick=async function(){var act=this.getAttribute("data-mass");if(act==="limpar"){S.admSel={};render();return;}var ids=Object.keys(S.admSel).filter(function(k){return S.admSel[k];});if(!ids.length)return;if(act==="excluir"){openDeleteLots(ids);return;}var allL=S.admLots||S.lots||[];ids=ids.filter(function(id){var l=allL.filter(function(x){return x.id===id;})[0];if(!l)return false;return act==="abrir"?(l.status==="rascunho"||l.status==="agendado"):l.status==="aberto";});if(!ids.length){toast(act==="abrir"?"Nenhum lote selecionado está em rascunho/agendado.":"Nenhum lote selecionado está aberto.","bad");return;}if(!confirm((act==="abrir"?"Abrir":"Encerrar")+" "+ids.length+" lote(s)?"))return;var st=act==="abrir"?"aberto":"encerrado";for(var i=0;i<ids.length;i++){await sb.from("lots").update({status:st}).eq("id",ids[i]);}if(act==="encerrar"){await sb.rpc("close_expired_lots");}S.admSel={};await loadLots();await loadMine();toast("Lotes atualizados.","ok");render();};});
+  document.querySelectorAll("[data-del]").forEach(function(b){b.onclick=function(){openDeleteLots([this.getAttribute("data-del")]);};});
+  document.querySelectorAll("[data-extend]").forEach(function(b){b.onclick=async function(){var id=this.getAttribute("data-extend");var l=(S.admLots||S.lots||[]).filter(function(x){return x.id===id;})[0];if(!l)return;var base=l.encerra_em?new Date(l.encerra_em):new Date();if(base<new Date())base=new Date();var novo=new Date(base.getTime()+15*60000).toISOString();var r=await sb.from("lots").update({encerra_em:novo}).eq("id",id);if(r.error){toast("Erro.","bad");return;}await loadLots();toast("Prazo estendido em 15 min.","ok");render();};});
   document.querySelectorAll("[data-feature]").forEach(function(b){b.onclick=async function(){var on=this.getAttribute("data-on")==="1";var r=await sb.from("lots").update({destaque:!on}).eq("id",this.getAttribute("data-feature"));if(r.error){toast("Erro.","bad");return;}await loadLots();toast(on?"Destaque removido.":"Lote destacado.","ok");render();};});
-  document.querySelectorAll("[data-dup]").forEach(function(b){b.onclick=async function(){var id=this.getAttribute("data-dup");var l=(S.lots||[]).filter(function(x){return x.id===id;})[0];if(!l)return;var maxn=0;(S.lots||[]).forEach(function(x){var n=parseInt(x.numero);if(!isNaN(n)&&n>maxn)maxn=n;});var obj={numero:maxn+1,titulo:(l.titulo||"")+" (cópia)",categoria:l.categoria,condicao:l.condicao,qtd_estimada:l.qtd_estimada,provavel_conteudo:l.provavel_conteudo,descricao:l.descricao,planilha_url:l.planilha_url||null,local_retirada:l.local_retirada,fotos:l.fotos,lance_inicial:l.lance_inicial,incremento:l.incremento,status:"rascunho",destaque:false};var r=await sb.from("lots").insert(obj);if(r.error){toast("Erro ao duplicar: "+(r.error.message||""),"bad");return;}await loadLots();toast("Lote duplicado (rascunho #"+(maxn+1)+").","ok");render();};});
-  document.querySelectorAll("[data-lots-export]").forEach(function(b){b.onclick=function(){var rows=[["#","Título","Categoria","Status","Lance atual (R$)","Lances","Encerra","Destaque"]];(S.lots||[]).forEach(function(l){rows.push([l.numero,l.titulo||"",l.categoria||"",l.status||"",reaisStr(curVal(l)),l.total_lances||0,l.encerra_em?fmtDT(l.encerra_em):"",l.destaque?"sim":"não"]);});csvDownload("lotes-palletbox.csv",rows);};});
+  document.querySelectorAll("[data-dup]").forEach(function(b){b.onclick=async function(){var id=this.getAttribute("data-dup");var l=(S.admLots||S.lots||[]).filter(function(x){return x.id===id;})[0];if(!l)return;var maxn=0;(S.admLots||S.lots||[]).forEach(function(x){var n=parseInt(x.numero);if(!isNaN(n)&&n>maxn)maxn=n;});var obj={numero:maxn+1,titulo:(l.titulo||"")+" (cópia)",categoria:l.categoria,condicao:l.condicao,qtd_estimada:l.qtd_estimada,provavel_conteudo:l.provavel_conteudo,descricao:l.descricao,planilha_url:l.planilha_url||null,local_retirada:l.local_retirada,fotos:l.fotos,lance_inicial:l.lance_inicial,incremento:l.incremento,status:"rascunho",destaque:false};var r=await sb.from("lots").insert(obj);if(r.error){toast("Erro ao duplicar: "+(r.error.message||""),"bad");return;}await loadLots();toast("Lote duplicado (rascunho #"+(maxn+1)+").","ok");render();};});
+  document.querySelectorAll("[data-lots-export]").forEach(function(b){b.onclick=function(){var rows=[["#","Título","Categoria","Status","Lance atual (R$)","Lances","Encerra","Destaque"]];(S.admLots||S.lots||[]).forEach(function(l){rows.push([l.numero,l.titulo||"",l.categoria||"",l.status||"",reaisStr(curVal(l)),l.total_lances||0,l.encerra_em?fmtDT(l.encerra_em):"",l.destaque?"sim":"não"]);});csvDownload("lotes-palletbox.csv",rows);};});
   var ag=$("agForm");if(ag){ag.onsubmit=async function(e){e.preventDefault();var f=new FormData(ag);var r=await sb.from("agenda").insert({titulo:f.get("titulo"),categoria:f.get("categoria"),quando:new Date(f.get("quando")).toISOString(),qtd_lotes:f.get("qtd_lotes")?parseInt(f.get("qtd_lotes")):null});if(r.error){toast("Erro.","bad");}else{await loadAgenda();toast("Agenda atualizada.","ok");render();}};}
   var cf=$("cfgForm");if(cf){cf.onsubmit=async function(e){e.preventDefault();var f=new FormData(cf),obj={};f.forEach(function(v,k){obj[k]=v;});obj.atualizado_em=new Date().toISOString();var r=await sb.from("config").update(obj).eq("id",1);if(r.error){toast("Erro ao salvar.","bad");}else{await loadConfig();toast("Dados salvos.","ok");render();}};}
   wireLotForm();
