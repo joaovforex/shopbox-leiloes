@@ -171,6 +171,66 @@ header.top{position:sticky;top:0;z-index:40;background:var(--surface);border-bot
 .dellist{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:var(--radius-sm);margin:10px 0}
 .dellist div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px}
 .dellist div:last-child{border-bottom:0}
+/* admin: lote ao vivo + relatório */
+.lnk{background:none;border:0;padding:0;color:var(--brand);font:inherit;font-weight:600;cursor:pointer;text-align:left}
+.lnk:hover{text-decoration:underline}
+.sc{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:22px;padding:0 7px;border-radius:999px;font:700 12px var(--mono);color:#fff}
+.sc.alto{background:var(--success)}.sc.medio{background:var(--gold)}.sc.baixo{background:#E06A1B}.sc.risco{background:var(--danger)}
+.lv-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:12px 0 16px}
+@media(max-width:980px){.lv-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.lv-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lv-k{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;min-width:0}
+.lv-k .l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:700}
+.lv-k .v{font:700 18px var(--mono);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lv-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;align-items:start}
+@media(max-width:980px){.lv-grid{grid-template-columns:1fr}}
+.lv-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px;min-width:0}
+.lv-card h4{margin:0 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--success);margin-right:6px;animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(23,124,70,.5)}70%{box-shadow:0 0 0 8px rgba(23,124,70,0)}100%{box-shadow:0 0 0 0 rgba(23,124,70,0)}}
+.feed{display:flex;flex-direction:column;max-height:560px;overflow:auto}
+.feed .it{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)}
+.feed .it:last-child{border-bottom:0}
+.feed .it.top{background:var(--success-soft);border-radius:8px;padding:9px 8px}
+.feed .val{font:700 15px var(--mono)}
+.feed .meta{font-size:12px;color:var(--ink-3)}
+.av{width:32px;height:32px;border-radius:50%;background:var(--brand-soft);color:var(--brand-deep);display:grid;place-items:center;font:700 12px var(--body);flex:0 0 auto}
+.rank{width:100%;border-collapse:collapse;font-size:13px}
+.rank th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+.rank td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.rank tr.lead td{background:var(--success-soft)}
+.rank td.mono,.rank td:nth-child(n+3){white-space:nowrap}
+.res{white-space:nowrap}
+.pr-ov{position:fixed;inset:0;z-index:150;background:rgba(15,10,4,.45);display:flex;justify-content:flex-end}
+.pr{width:min(640px,100%);height:100%;background:var(--bg);overflow:auto;box-shadow:var(--shadow-lg);animation:prIn .18s ease-out}
+@keyframes prIn{from{transform:translateX(30px);opacity:.4}to{transform:none;opacity:1}}
+.pr-h{position:sticky;top:0;z-index:2;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pr-b{padding:14px 16px 30px;display:flex;flex-direction:column;gap:12px}
+.pr-id{display:flex;gap:12px;align-items:center}
+.pr-id .av{width:52px;height:52px;font-size:18px}
+.pr-id h2{margin:0;font-size:21px}
+.pr-sc{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.pr-sc .big{font:800 44px var(--dsp);line-height:1}
+.pr-bar{height:10px;border-radius:999px;background:var(--surface-3);overflow:hidden}
+.pr-bar i{display:block;height:100%}
+.sinais{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.sinais li{display:flex;justify-content:space-between;gap:10px}
+.sinais .pos{color:var(--success);font-weight:700}.sinais .neg{color:var(--danger);font-weight:700}.sinais .neu{color:var(--ink-3);font-weight:700}
+.pr-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media(max-width:560px){.pr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pr-dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.pr-dl dt{color:var(--ink-3)}.pr-dl dd{margin:0;font-weight:600;word-break:break-word}
+.res{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase}
+.res.venceu,.res.liderando{background:var(--success-soft);color:var(--success)}
+.res.superado{background:var(--gold-soft);color:var(--gold)}
+.res.perdeu{background:var(--surface-3);color:var(--ink-3)}
+.admpanel{border:2px dashed var(--brand);background:var(--brand-soft)}
+@media print{
+  body.printing>*:not(#prDrawer){display:none!important}
+  body.printing #prDrawer{position:static;background:none;display:block}
+  body.printing .pr{width:auto;height:auto;overflow:visible;box-shadow:none;animation:none;background:#fff}
+  body.printing .noprint{display:none!important}
+}
 .sheethead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .sheethead p{margin:2px 0 0;font-size:13px}
 .sheetframe{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;height:min(70vh,560px)}
@@ -324,7 +384,7 @@ var ERR={nao_autenticado:"Entre na sua conta para dar um lance.",lote_inexistent
 /* ===== data ===== */
 async function loadConfig(){try{var r=await sb.from("config").select("*").eq("id",1).maybeSingle();if(r.data){S.config=r.data;if(r.data.whatsapp)WA=String(r.data.whatsapp).replace(/\D/g,"")||WA;}}catch(e){}}
 async function loadLots(){var r=await sb.from("lots").select("*").in("status",["aberto","agendado","encerrado"]).order("status",{ascending:true}).order("encerra_em",{ascending:true});S.lots=r.data||[];if(isAdmin()){var ra=await sb.from("lots").select("*").order("numero",{ascending:false});if(!ra.error)S.admLots=ra.data||[];}}
-async function loadLot(numero){var r=await sb.from("lots").select("*").eq("numero",numero).maybeSingle();S.curLot=r.data||null;if(S.curLot){var b=await sb.from("bids").select("valor,criado_em,user_id").eq("lot_id",S.curLot.id).order("criado_em",{ascending:false}).limit(12);S.curBids=b.data||[];}}
+async function loadLot(numero){var r=await sb.from("lots").select("*").eq("numero",numero).maybeSingle();S.curLot=r.data||null;if(S.curLot&&isAdmin()){try{var al=await sb.rpc("admin_lot_live",{p_lot:S.curLot.id});S.curLotLive=al.error?null:((typeof al.data==="string")?JSON.parse(al.data):al.data);}catch(e){S.curLotLive=null;}}else{S.curLotLive=null;}if(S.curLot){var b=await sb.from("bids").select("valor,criado_em,user_id").eq("lot_id",S.curLot.id).order("criado_em",{ascending:false}).limit(12);S.curBids=b.data||[];}}
 async function loadAgenda(){var r=await sb.from("agenda").select("*").eq("status","previsto").order("quando",{ascending:true});S.agenda=r.data||[];}
 async function loadProfile(){if(!S.session){S.profile=null;return;}var r=await sb.from("profiles").select("*").eq("id",S.session.user.id).maybeSingle();S.profile=r.data||null;}
 async function loadMine(){if(!S.session){S.myBids=[];S.arremates=[];return;}
@@ -546,10 +606,20 @@ function vLote(){
           +'<div class="kv"><span class="k">Taxas / comissão</span><span class="v">'+ac(S.config.pagamento)+'</span></div>'
           +'<div class="kv"><span class="k">Nota fiscal / inspeção</span><span class="v"><span class="muted">A confirmar</span></span></div>'
         +'</div>'
+        +(isAdmin()?lotAdminPanel(l):"")
         +'<div class="dtsec"><h3>Histórico de lances</h3>'+(S.curBids.length?('<div class="hist">'+S.curBids.map(function(b){return '<div class="row"><span>'+esc(maskName("Participante"))+'</span><span class="mono">'+brl(b.valor)+'</span></div>';}).join("")+'</div><p class="muted" style="font-size:12px;margin:10px 0 0">Nomes dos participantes são preservados por privacidade.</p>'):'<p class="muted" style="margin:0;font-size:13px">Ainda sem lances. Seja o primeiro.</p>')+'</div>'
       +'</div>'
       +'<div><div class="bidbox">'+box+'</div></div>'
     +'</div><div style="height:30px"></div></div>';
+}
+function lotAdminPanel(l){
+  var d=S.curLotLive; if(!d)return '<div class="dtsec admpanel"><h3>Painel do admin</h3><p class="muted" style="margin:0;font-size:13px">Carregando dados do admin…</p></div>';
+  var parts=d.participantes||[], bids=(d.lances||[]).slice(0,8), st=d.stats||{};
+  return '<div class="dtsec admpanel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Painel do admin <span class="muted" style="font-weight:600;font-size:12px">· só você vê</span></h3><button class="btn btn-primary btn-sm" data-golot="'+esc(l.id)+'">Abrir painel completo</button></div>'
+    +'<p class="muted" style="font-size:12.5px;margin:6px 0 10px">'+(l.status==="aberto"?'<span class="live-dot"></span>Ao vivo · ':'')+(st.participantes||0)+' participante(s) · '+(st.lances||0)+' lance(s) · último '+esc(ago(st.ultimo_lance_em))+'</p>'
+    +(parts.length?'<table class="rank"><thead><tr><th>Participante</th><th>Score</th><th>Lances</th><th>Maior</th></tr></thead><tbody>'+parts.map(function(p){return '<tr class="'+(p.lider?"lead":"")+'"><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+'</td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+esc(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td></tr>';}).join("")+'</tbody></table>':'<p class="muted" style="margin:0;font-size:13px">Sem participantes ainda.</p>')
+    +(bids.length?'<div class="feed" style="margin-top:10px">'+bids.map(function(b){return '<div class="it"><div class="av">'+esc(initials(b.nome))+'</div><div>'+prLink(b.user_id,b.nome)+'<div class="meta">'+esc(ago(b.criado_em))+'</div></div><div class="val">'+brl(b.valor)+'</div></div>';}).join("")+'</div>':'')
+    +'</div>';
 }
 function vComo(){
   var st=[["Consulte o lote e suas condições","Veja fotos, estado, quantidade e provável conteúdo antes de decidir."],
@@ -765,28 +835,122 @@ function admMetrics(){
 }
 async function loadLotBids(lotId, silent){
   if(!silent){ S.admLotBidsLoading=true; }
-  try{ var r=await sb.rpc("admin_bids_for_lot",{p_lot:String(lotId)}); if(r.error) throw r.error; S.admLotBids=r.data||[]; }
-  catch(e){ S.admLotBids={__err:(e&&e.message)||"erro"}; }
+  try{ var r=await sb.rpc("admin_lot_live",{p_lot:String(lotId)}); if(r.error) throw r.error; var d=(typeof r.data==="string")?JSON.parse(r.data):r.data; S.admLotLive=d; S.admLotBids=(d&&d.lances)||[]; }
+  catch(e){ if(!silent||!S.admLotLive){ S.admLotBids={__err:(e&&e.message)||"erro"}; S.admLotLive=null; } }
   S.admLotBidsLoading=false;
   if(!silent && S.route.name==="admin") render();
 }
 function admLotBidsView(){
-  var l=(S.lots||[]).filter(function(x){return x.id===S.admLotBidsFor;})[0]||{};
-  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><button class="btn btn-ghost btn-sm" data-lotbids-back="1">← Voltar</button><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-bids-export="'+esc(S.admLotBidsFor)+'">Exportar CSV</button><button class="btn btn-line btn-sm" data-lotbids-refresh="'+esc(S.admLotBidsFor)+'">Atualizar</button></div></div>'
-    +'<h3 style="margin:0 0 4px">Lances — #'+esc(l.numero||"")+' '+esc(l.titulo||"")+'</h3>'
-    +'<p class="muted" style="font-size:13px;margin:0 0 12px">'+(l.status==="aberto"?'<span class="tag ok">Ao vivo</span> atualiza sozinho a cada novo lance. ':'')+'Atual: '+brl(curVal(l))+' · '+(l.total_lances||0)+' lance(s).</p>';
-  var bids=S.admLotBids;
-  if(S.admLotBidsLoading || bids==null){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Carregando lances…</b></div>'; }
-  if(bids.__err){ return head+'<div class="note"><svg><use href="#i-help"/></svg><span>Não foi possível carregar ('+esc(bids.__err)+'). Confirme que sua conta é admin.</span></div>'; }
-  if(!bids.length){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Sem lances ainda</b>Quando alguém der um lance, aparece aqui na hora.</div>'; }
-  var rows=bids.map(function(b,i){
-    var wa=(b.whatsapp||"").replace(/\D/g,"");
-    var walink=wa?('<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="https://wa.me/'+(wa.length<=11?"55"+wa:wa)+'">WhatsApp</a>'):'';
-    return '<tr><td class="mono">'+(i+1)+'</td><td>'+esc(b.nome||"—")+'</td><td class="mono">'+esc(b.whatsapp||"—")+'</td><td class="mono">'+brl(b.valor)+'</td><td>'+esc(fmtDT(b.criado_em))+'</td><td style="white-space:nowrap">'+walink+' <button class="btn btn-ghost btn-sm" data-cancelbid="'+esc(b.bid_id)+'" title="Cancelar este lance">Cancelar</button></td></tr>';
-  }).join("");
-  return head+'<table class="adm"><thead><tr><th>#</th><th>Participante</th><th>WhatsApp</th><th>Lance</th><th>Quando</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<p class="muted" style="font-size:12px;margin:10px 0 0">Cancelar um lance recalcula o lance atual e o vencedor do lote automaticamente.</p>';
+  var d=S.admLotLive||{}, l=d.lot||(S.admLots||S.lots||[]).filter(function(x){return x.id===S.admLotBidsFor;})[0]||{};
+  var st=d.stats||{}, parts=d.participantes||[], bids=S.admLotBids;
+  var leader=parts.filter(function(p){return p.lider;})[0];
+  var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><button class="btn btn-ghost btn-sm" data-lotbids-back="1">← Voltar aos lotes</button><div style="display:flex;gap:6px;flex-wrap:wrap">'
+      +(l.numero!=null?'<a class="btn btn-ghost btn-sm" href="#/lote/'+esc(l.numero)+'">Ver página do lote</a>':'')
+      +'<button class="btn btn-ghost btn-sm" data-bids-export="'+esc(S.admLotBidsFor)+'">Exportar CSV</button><button class="btn btn-line btn-sm" data-lotbids-refresh="'+esc(S.admLotBidsFor)+'">Atualizar</button></div></div>'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">#'+esc(l.numero||"")+' '+esc(l.titulo||"")+'</h3>'+statusChip(l.status)
+      +(l.status==="aberto"?'<span class="muted" style="font-size:12.5px"><span class="live-dot"></span>Ao vivo — atualiza sozinho</span>':'')+'</div>';
+  if(S.admLotBidsLoading && !S.admLotLive){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Carregando lote…</b></div>'; }
+  if(bids&&bids.__err){ return head+'<div class="note warn"><svg><use href="#i-info"/></svg><span>Não foi possível carregar ('+esc(bids.__err)+'). Confirme que sua conta é admin.</span></div>'; }
+  var lf=left(l.encerra_em);
+  function kp(lb,v,extra){return '<div class="lv-k"><div class="l">'+lb+'</div><div class="v" '+(extra||"")+'>'+v+'</div></div>';}
+  var kpis='<div class="lv-kpis">'
+    +kp(l.total_lances>0?"Lance atual":"Lance inicial",brl(l.lance_atual||l.lance_inicial))
+    +kp("Líder",leader?prLink(leader.user_id,maskName(leader.nome)):'—','style="font-family:var(--body);font-size:15px"')
+    +kp("Participantes",st.participantes||0)
+    +kp("Lances",st.lances||0)
+    +kp(l.status==="aberto"?"Encerra em":"Encerramento",l.status==="aberto"?('<span data-cd="'+esc(l.encerra_em)+'">'+lf.txt+'</span>'):esc(l.encerra_em?fmtDT(l.encerra_em):"—"),lf.urgent?'style="color:var(--danger)"':'')
+    +kp("Último lance",esc(ago(st.ultimo_lance_em)),'style="font-family:var(--body);font-size:15px"')
+  +'</div>';
+  var rank='<div class="lv-card"><h4>Participantes neste lote <span class="muted" style="font-weight:600">'+parts.length+'</span></h4>'
+    +(parts.length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>#</th><th>Participante</th><th>Score</th><th>Lances</th><th>Maior lance</th><th>Último</th><th></th></tr></thead><tbody>'
+      +parts.map(function(p,i){var wl=waHref(p.whatsapp);return '<tr class="'+(p.lider?"lead":"")+'"><td class="mono">'+(i+1)+'</td><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+(p.blocked?' <span class="tag warn">bloqueado</span>':'')+'<div class="meta muted" style="font-size:11.5px">'+esc(p.cidade||"")+'</div></td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+esc(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td><td style="white-space:nowrap;font-size:12px">'+esc(ago(p.ultimo_em))+'</td><td style="white-space:nowrap">'+(wl?'<a class="btn btn-ghost btn-sm" style="padding:3px 8px" target="_blank" rel="noopener" href="'+wl+'" title="WhatsApp">WhatsApp</a>':'')+'</td></tr>';}).join("")
+      +'</tbody></table></div>':'<p class="muted" style="margin:0;font-size:13px">Ninguém deu lance ainda.</p>')+'</div>';
+  var feed='<div class="lv-card"><h4>Lances em tempo real <span class="muted" style="font-weight:600">'+((bids&&bids.length)||0)+'</span></h4>'
+    +(bids&&bids.length?'<div class="feed">'+bids.map(function(b,i){return '<div class="it'+(i===0?" top":"")+'"><div class="av">'+esc(initials(b.nome))+'</div><div style="min-width:0"><div>'+prLink(b.user_id,b.nome)+(i===0?' <span class="tag ok">maior lance</span>':'')+'</div><div class="meta">'+esc(fmtDT(b.criado_em))+' · '+esc(ago(b.criado_em))+'</div></div><div style="text-align:right"><div class="val">'+brl(b.valor)+'</div><button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11.5px" data-cancelbid="'+esc(b.bid_id)+'" title="Cancelar este lance">Cancelar</button></div></div>';}).join("")+'</div>'
+      :'<div class="empty" style="padding:18px"><svg><use href="#i-gavel"/></svg><b>Sem lances ainda</b>Quando alguém der um lance, aparece aqui na hora.</div>')
+    +'<p class="muted" style="font-size:11.5px;margin:10px 0 0">Cancelar um lance recalcula o lance atual e o líder automaticamente.</p></div>';
+  return head+kpis+'<div class="lv-grid">'+rank+feed+'</div>';
 }
+/* ===== ADMIN: score / relatório do participante ===== */
+var NIVEL={alto:"Confiança alta",medio:"Confiança média",baixo:"Confiança baixa",risco:"Risco"};
+function scoreBadge(c){if(!c||c.score==null)return "";return '<span class="sc '+esc(c.nivel||"")+'" title="'+esc(NIVEL[c.nivel]||"")+'">'+esc(c.score)+'</span>';}
+function ago(iso){if(!iso)return "—";var s=Math.max(0,Math.floor((Date.now()-new Date(iso))/1000));if(s<60)return "agora";var m=Math.floor(s/60);if(m<60)return "há "+m+" min";var h=Math.floor(m/60);if(h<24)return "há "+h+"h";return "há "+Math.floor(h/24)+"d";}
+function prLink(uid,nome){return uid?'<button type="button" class="lnk" data-pr="'+esc(uid)+'">'+esc(nome||"Participante")+'</button>':esc(nome||"—");}
+var RESL={venceu:"Venceu",liderando:"Liderando",superado:"Superado",perdeu:"Não venceu"};
+async function loadReport(uid,silent){
+  if(!silent){S.prLoading=true;renderReport();}
+  try{var r=await sb.rpc("admin_participant_report",{p_user:String(uid)});if(r.error)throw r.error;S.prData=(typeof r.data==="string")?JSON.parse(r.data):r.data;}
+  catch(e){if(!silent)S.prData={__err:(e&&e.message)||"erro"};}
+  S.prLoading=false; if(S.prUser===uid)renderReport();
+}
+function openReport(uid){if(!uid)return;S.prUser=uid;S.prData=null;renderReport();loadReport(uid);}
+function closeReport(){S.prUser=null;S.prData=null;var d=document.getElementById("prDrawer");if(d)d.remove();document.body.style.overflow="";}
+function renderReport(){
+  if(!S.prUser)return;
+  var d=document.getElementById("prDrawer");
+  if(!d){d=document.createElement("div");d.className="pr-ov";d.id="prDrawer";document.body.appendChild(d);document.body.style.overflow="hidden";
+    d.addEventListener("click",function(e){if(e.target===d)closeReport();});}
+  var x=S.prData, body;
+  if(S.prLoading||!x){body='<div class="empty"><svg><use href="#i-user"/></svg><b>Carregando relatório…</b></div>';}
+  else if(x.__err){body='<div class="note warn"><svg><use href="#i-info"/></svg><span>Não foi possível carregar ('+esc(x.__err)+').</span></div>';}
+  else{
+    var p=x.perfil||{},c=x.confianca||{},k=x.kpis||{};
+    var cor={alto:"var(--success)",medio:"var(--gold)",baixo:"#E06A1B",risco:"var(--danger)"}[c.nivel]||"var(--ink-3)";
+    var taxa=k.lotes?Math.round(100*(k.vencidos||0)/k.lotes):0;
+    function kp(l,v){return '<div class="lv-k"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>';}
+    var wl=waHref(p.whatsapp,"Olá "+((p.nome||"").split(" ")[0]||"")+"! Aqui é da PalletBox Leilões.");
+    body='<div class="pr-id"><div class="av">'+esc(initials(p.nome))+'</div><div style="min-width:0"><h2>'+esc(p.nome||"Sem nome")+'</h2>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+(p.role==="admin"?'<span class="tag ok">admin</span>':'')+(p.blocked?'<span class="tag warn">bloqueado</span>':'')+'<span class="tag">'+esc(p.cidade||"Cidade não informada")+'</span></div></div></div>'
+      +'<div class="noprint" style="display:flex;gap:6px;flex-wrap:wrap">'
+        +(wl?'<a class="btn btn-primary btn-sm" target="_blank" rel="noopener" href="'+wl+'">WhatsApp</a>':'')
+        +(p.role!=="admin"?'<button class="btn btn-line btn-sm" data-prblock="'+(p.blocked?0:1)+'">'+(p.blocked?'Desbloquear':'Bloquear participante')+'</button>':'')
+        +'<button class="btn btn-ghost btn-sm" data-prcsv="1">Exportar CSV</button><button class="btn btn-ghost btn-sm" data-prprint="1">Imprimir / PDF</button></div>'
+      +'<div class="lv-card"><div class="pr-sc"><div><div class="big" style="color:'+cor+'">'+esc(c.score!=null?c.score:"—")+'</div><div class="muted" style="font-size:12px">de 100</div></div>'
+        +'<div><div style="font-weight:700;margin-bottom:6px">'+esc(NIVEL[c.nivel]||"")+'</div><div class="pr-bar"><i style="width:'+(c.score||0)+'%;background:'+cor+'"></i></div></div></div>'
+        +'<ul class="sinais">'+((c.sinais||[]).map(function(s){var cls=s.p>0?"pos":(s.p<0?"neg":"neu");return '<li><span>'+esc(s.t)+'</span><span class="'+cls+'">'+(s.p>0?"+":"")+esc(s.p)+'</span></li>';}).join("")||'<li class="muted">Sem sinais relevantes.</li>')+'</ul>'
+        +'<p class="muted" style="font-size:11.5px;margin:8px 0 0">Base 50 pontos. Sobe com pagamentos em dia, cadastro completo e conta antiga; cai com atrasos, cancelamentos e lances fora do padrão.</p></div>'
+      +'<div class="pr-kpis">'+kp("Lances",k.lances||0)+kp("Lotes disputados",k.lotes||0)+kp("Lotes vencidos",k.vencidos||0)+kp("Taxa de vitória",taxa+"%")
+        +kp("Liderando agora",k.liderando||0)+kp("Arrematado",brl(k.total_arrematado||0))+kp("Pago",brl(k.total_pago||0))+kp("Pendente",brl(k.pendente||0))+'</div>'
+      +'<div class="lv-card"><h4>Dados cadastrais</h4><dl class="pr-dl">'
+        +'<dt>E-mail</dt><dd>'+esc(p.email||"—")+(p.email?(p.email_confirmado?' <span class="tag ok">confirmado</span>':''):'')+'</dd>'
+        +'<dt>WhatsApp</dt><dd class="mono">'+esc(p.whatsapp||"—")+'</dd>'
+        +'<dt>Cidade</dt><dd>'+esc(p.cidade||"—")+'</dd>'
+        +'<dt>Cadastro</dt><dd>'+esc(fmtDT(p.criado_em))+' ('+esc(ago(p.criado_em))+')</dd>'
+        +'<dt>Último acesso</dt><dd>'+esc(p.ultimo_acesso?fmtDT(p.ultimo_acesso)+" ("+ago(p.ultimo_acesso)+")":"—")+'</dd>'
+        +'<dt>Primeiro lance</dt><dd>'+esc(k.primeiro_lance?fmtDT(k.primeiro_lance):"—")+'</dd>'
+        +'<dt>Último lance</dt><dd>'+esc(k.ultimo_lance?fmtDT(k.ultimo_lance)+" ("+ago(k.ultimo_lance)+")":"—")+'</dd>'
+        +'<dt>Maior lance</dt><dd class="mono">'+(k.maior_lance!=null?brl(k.maior_lance):"—")+'</dd>'
+        +'<dt>ID</dt><dd class="mono" style="font-size:11px;font-weight:400">'+esc(p.user_id||"")+'</dd></dl></div>'
+      +'<div class="lv-card"><h4>Lotes em que participou <span class="muted" style="font-weight:600">'+(x.lotes||[]).length+'</span></h4>'
+        +((x.lotes||[]).length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>Lote</th><th>Status</th><th>Lances</th><th>Maior dele</th><th>Atual</th><th>Resultado</th></tr></thead><tbody>'
+          +(x.lotes||[]).map(function(l){return '<tr><td><button type="button" class="lnk" data-golot="'+esc(l.lot_id)+'">#'+esc(l.numero)+' '+esc(l.titulo||"")+'</button></td><td>'+statusChip(l.status)+'</td><td class="mono">'+esc(l.meus_lances)+'</td><td class="mono">'+brl(l.meu_maior)+'</td><td class="mono">'+brl(l.lance_atual||l.lance_inicial)+'</td><td><span class="res '+esc(l.resultado)+'">'+esc(RESL[l.resultado]||l.resultado)+'</span></td></tr>';}).join("")
+          +'</tbody></table></div>':'<p class="muted" style="margin:0;font-size:13px">Ainda não deu lances.</p>')+'</div>'
+      +'<div class="lv-card"><h4>Arremates e pagamentos <span class="muted" style="font-weight:600">'+(x.arremates||[]).length+'</span></h4>'
+        +((x.arremates||[]).length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>Lote</th><th>Valor</th><th>Situação</th><th>Pago</th><th>Data</th></tr></thead><tbody>'
+          +(x.arremates||[]).map(function(a){return '<tr><td>#'+esc(a.numero)+' '+esc(a.titulo||"")+'</td><td class="mono">'+brl(a.valor)+'</td><td>'+statusLabel(a.status)+'</td><td class="mono">'+(a.valor_pago!=null?brl(a.valor_pago)+(a.metodo_pagamento?' · '+esc(a.metodo_pagamento):''):'—')+'</td><td>'+esc(fmtDT(a.criado_em))+'</td></tr>';}).join("")
+          +'</tbody></table></div>':'<p class="muted" style="margin:0;font-size:13px">Nenhum arremate.</p>')+'</div>'
+      +'<div class="lv-card"><h4>Últimos lances</h4>'
+        +((x.lances||[]).length?'<div class="feed" style="max-height:none">'+(x.lances||[]).map(function(b){return '<div class="it"><span class="mono muted" style="font-size:12px">#'+esc(b.numero)+'</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(b.titulo||"")+'<div class="meta">'+esc(fmtDT(b.criado_em))+' · '+esc(ago(b.criado_em))+'</div></span><span class="val">'+brl(b.valor)+'</span></div>';}).join("")+'</div>':'<p class="muted" style="margin:0;font-size:13px">Sem lances.</p>')+'</div>';
+  }
+  var oldAside=d.querySelector(".pr"), keepTop=oldAside?oldAside.scrollTop:0;
+  d.innerHTML='<aside class="pr" role="dialog" aria-modal="true" aria-label="Relatório do participante"><div class="pr-h"><div><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700">Relatório do participante</div><div style="font-size:12px" class="muted">Atualiza sozinho com novos lances</div></div><button class="mclose noprint" data-prclose="1" aria-label="Fechar"><svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-close"/></svg></button></div><div class="pr-b">'+body+'</div></aside>';
+  if(keepTop){var na=d.querySelector(".pr");if(na)na.scrollTop=keepTop;}
+  d.querySelector("[data-prclose]").onclick=closeReport;
+  var bb=d.querySelector("[data-prblock]");
+  if(bb)bb.onclick=async function(){var blk=this.getAttribute("data-prblock")==="1";if(blk&&!confirm("Bloquear este participante? Ele não poderá dar novos lances."))return;var r=await sb.rpc("admin_set_blocked",{p_user:S.prUser,p_blocked:blk});if(r.error){toast("Erro: "+(r.error.message||""),"bad");return;}toast(blk?"Participante bloqueado.":"Participante desbloqueado.","ok");S.participants=null;await loadReport(S.prUser,true);if(S.admLotBidsFor)loadLotBids(S.admLotBidsFor,true).then(render);};
+  var cv=d.querySelector("[data-prcsv]");
+  if(cv)cv.onclick=function(){var x=S.prData||{},p=x.perfil||{},c=x.confianca||{};var rows=[["Participante",p.nome||""],["E-mail",p.email||""],["WhatsApp",p.whatsapp||""],["Cidade",p.cidade||""],["Score",c.score],["Nível",NIVEL[c.nivel]||""],[],["Lote","Título","Status","Lances dele","Maior lance dele (R$)","Resultado"]];(x.lotes||[]).forEach(function(l){rows.push([l.numero,l.titulo||"",l.status,l.meus_lances,reaisStr(l.meu_maior),RESL[l.resultado]||l.resultado]);});csvDownload("relatorio-"+((p.nome||"participante").toLowerCase().replace(/[^a-z0-9]+/g,"-"))+".csv",rows);};
+  var pp=d.querySelector("[data-prprint]");
+  if(pp)pp.onclick=function(){document.body.classList.add("printing");setTimeout(function(){window.print();document.body.classList.remove("printing");},50);};
+}
+document.addEventListener("click",function(e){
+  var t=e.target.closest&&e.target.closest("[data-pr]");
+  if(t){e.preventDefault();openReport(t.getAttribute("data-pr"));return;}
+  var g=e.target.closest&&e.target.closest("[data-golot]");
+  if(g){e.preventDefault();var id=g.getAttribute("data-golot");closeReport();S.admTab="lotes";S.admLotBidsFor=id;S.admLotLive=null;S.admLotBidsLoading=true;if(location.hash!=="#/admin"){location.hash="#/admin";}else{render();}loadLotBids(id);window.scrollTo(0,0);}
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&S.prUser&&!document.getElementById("lbox"))closeReport();});
+
 /* ===== ADMIN: helpers (CSV, WhatsApp) ===== */
 function csvCell(v){v=v==null?"":String(v);if(/[";\n\r]/.test(v)){v='"'+v.replace(/"/g,'""')+'"';}return v;}
 function csvDownload(name,rows){try{var bom="﻿";var txt=bom+rows.map(function(r){return r.map(csvCell).join(";");}).join("\r\n");var blob=new Blob([txt],{type:"text/csv;charset=utf-8"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},600);toast("CSV exportado.","ok");}catch(e){toast("Não foi possível exportar.","bad");}}
@@ -814,17 +978,18 @@ function admParticipants(){
   var rows=list.map(function(u){
     var wl=waHref(u.whatsapp);var isAdmin=u.role==='admin';
     return '<tr'+(u.blocked?' style="opacity:.55"':'')+'>'
-      +'<td>'+esc(u.nome||"—")+(isAdmin?' <span class="tag ok">admin</span>':'')+(u.blocked?' <span class="tag warn">bloqueado</span>':'')+'</td>'
+      +'<td>'+prLink(u.user_id,u.nome||"—")+(isAdmin?' <span class="tag ok">admin</span>':'')+(u.blocked?' <span class="tag warn">bloqueado</span>':'')+'</td><td>'+scoreBadge({score:u.score,nivel:u.nivel})+'</td>'
       +'<td class="mono">'+esc(u.whatsapp||"—")+'</td><td>'+esc(u.cidade||"—")+'</td>'
       +'<td class="mono">'+(u.n_lances||0)+'</td><td class="mono">'+(u.n_arremates||0)+'</td><td class="mono">'+brl(u.total_arrematado||0)+'</td>'
       +'<td>'+esc(u.ultimo_acesso?fmtDT(u.ultimo_acesso):"—")+'</td>'
       +'<td style="white-space:nowrap">'
+        +'<button class="btn btn-line btn-sm" data-pr="'+esc(u.user_id)+'">Relatório</button> '
         +(wl?'<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="'+wl+'">WhatsApp</a> ':'')
         +'<button class="btn btn-ghost btn-sm" data-block="'+esc(u.user_id)+'" data-blocked="'+(u.blocked?1:0)+'">'+(u.blocked?'Desbloquear':'Bloquear')+'</button> '
         +'<button class="btn btn-ghost btn-sm" data-role="'+esc(u.user_id)+'" data-isadmin="'+(isAdmin?1:0)+'">'+(isAdmin?'Remover admin':'Tornar admin')+'</button>'
       +'</td></tr>';
   }).join("");
-  return head+'<div style="overflow-x:auto"><table class="adm"><thead><tr><th>Nome</th><th>WhatsApp</th><th>Cidade</th><th>Lances</th><th>Arremates</th><th>Arrematado</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return head+'<div style="overflow-x:auto"><table class="adm"><thead><tr><th>Nome</th><th>Score</th><th>WhatsApp</th><th>Cidade</th><th>Lances</th><th>Arremates</th><th>Arrematado</th><th>Último acesso</th><th>Ações</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
 /* ===== ADMIN: financeiro / arremates ===== */
@@ -847,7 +1012,7 @@ function admFinanceiro(){
     var wl=waHref(x.whatsapp,msg);
     return '<tr>'
       +'<td>#'+esc(x.numero)+' — '+esc(x.titulo||"")+'</td>'
-      +'<td>'+esc(x.nome||"—")+'<div class="muted" style="font-size:12px">'+esc(x.whatsapp||"")+'</div></td>'
+      +'<td>'+prLink(x.user_id,x.nome||"—")+'<div class="muted" style="font-size:12px">'+esc(x.whatsapp||"")+'</div></td>'
       +'<td class="mono">'+brl(x.valor)+'</td>'
       +'<td>'+statusLabel(x.status)+(x.valor_pago!=null?'<div class="muted" style="font-size:12px">pago '+brl(x.valor_pago)+(x.metodo_pagamento?(' · '+esc(x.metodo_pagamento)):'')+'</div>':'')+'</td>'
       +'<td style="white-space:nowrap">'
@@ -907,9 +1072,9 @@ function admLotesView(){
     var canBulk=(l.status==="aberto"||l.status==="agendado"||l.status==="rascunho");
     return '<tr>'
       +'<td><input type="checkbox" class="lotchk" data-chk="'+l.id+'" '+(sel[l.id]?"checked":"")+' aria-label="Selecionar lote '+esc(l.numero)+'"></td>'
-      +'<td class="mono">'+esc(l.numero)+(l.destaque?' ★':'')+'</td><td>'+esc(l.titulo)+'</td><td>'+statusChip(l.status)+'</td>'
+      +'<td class="mono">'+esc(l.numero)+(l.destaque?' ★':'')+'</td><td><button type="button" class="lnk" data-lotbids="'+l.id+'" title="Abrir painel do lote">'+esc(l.titulo)+'</button></td><td>'+statusChip(l.status)+'</td>'
       +'<td class="mono">'+brl(curVal(l))+'</td>'
-      +'<td><button class="btn btn-ghost btn-sm" data-lotbids="'+l.id+'">'+(l.total_lances||0)+' ver</button></td>'
+      +'<td><button class="btn btn-line btn-sm" data-lotbids="'+l.id+'">'+(l.status==="aberto"?'<span class="live-dot"></span>':'')+(l.total_lances||0)+' · ver</button></td>'
       +'<td>'+esc(l.encerra_em?fmtDT(l.encerra_em):"—")+'</td>'
       +'<td style="white-space:nowrap">'
         +(l.status==="rascunho"||l.status==="agendado"?'<button class="btn btn-primary btn-sm" data-open="'+l.id+'">Abrir</button> ':"")
@@ -1031,6 +1196,7 @@ async function refreshCurrent(){
   await loadLots();
   if(S.session)await loadMine();
   if(S.admLotBidsFor){ await loadLotBids(S.admLotBidsFor, true); }
+  if(S.prUser){ loadReport(S.prUser, true); }
   render();
 }
 
@@ -1241,9 +1407,9 @@ function renderHomeGridOnly(){ // re-render só a home para busca fluida
   if(val!=null){var q=$("q");if(q){q.focus();q.value=val;try{q.setSelectionRange(pos,pos);}catch(e){}}}
 }
 function wireAdmin(){
-  document.querySelectorAll("[data-adm]").forEach(function(b){b.onclick=function(){S.admTab=this.getAttribute("data-adm");S.admLotBidsFor=null;S.admLotBids=null;render();};});
-  document.querySelectorAll("[data-lotbids]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=this.getAttribute("data-lotbids");S.admLotBids=null;S.admLotBidsLoading=true;render();loadLotBids(S.admLotBidsFor);};});
-  document.querySelectorAll("[data-lotbids-back]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=null;S.admLotBids=null;render();};});
+  document.querySelectorAll("[data-adm]").forEach(function(b){b.onclick=function(){S.admTab=this.getAttribute("data-adm");S.admLotBidsFor=null;S.admLotBids=null;S.admLotLive=null;render();};});
+  document.querySelectorAll("[data-lotbids]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=this.getAttribute("data-lotbids");S.admLotBids=null;S.admLotLive=null;S.admLotBidsLoading=true;render();loadLotBids(S.admLotBidsFor);};});
+  document.querySelectorAll("[data-lotbids-back]").forEach(function(b){b.onclick=function(){S.admLotBidsFor=null;S.admLotBids=null;S.admLotLive=null;render();};});
   document.querySelectorAll("[data-lotbids-refresh]").forEach(function(b){b.onclick=function(){S.admLotBidsLoading=true;render();loadLotBids(this.getAttribute("data-lotbids-refresh"));};});
   document.querySelectorAll("[data-metrics-refresh]").forEach(function(b){b.onclick=function(){S.metrics=null;S.metricsLoading=true;render();loadMetrics();};});
   document.querySelectorAll("[data-open]").forEach(function(b){b.onclick=async function(){await sb.from("lots").update({status:"aberto"}).eq("id",this.getAttribute("data-open"));await loadLots();toast("Lote aberto.","ok");render();};});
@@ -1257,7 +1423,7 @@ function wireAdmin(){
   document.querySelectorAll("[data-metrics-days]").forEach(function(b){b.onclick=function(){S.metricsDays=parseInt(this.getAttribute("data-metrics-days"));S.metrics=null;S.metricsLoading=true;render();loadMetrics();};});
   document.querySelectorAll("[data-metrics-export]").forEach(function(b){b.onclick=function(){var m=S.metrics;if(!m||m.__err)return;var k=m.kpis||{},per=m.periodo||{};var rows=[["Métrica","Valor"],["Lotes total",k.lotes_total],["Lotes abertos",k.lotes_abertos],["Lotes encerrados",k.lotes_encerrados],["Total de lances",k.total_lances],["Participantes únicos",k.participantes_unicos],["Arremates",k.arremates_total],["Valor arrematado (R$)",reaisStr(k.valor_arrematado)],["Ticket médio (R$)",reaisStr(k.ticket_medio)],["Taxa de conversão (%)",k.taxa_conversao],["Média lances/lote",k.media_lances_lote],["--- Período (dias)",m.periodo_dias],["Lances no período",per.lances],["Arremates no período",per.arremates],["Receita arrematada (R$)",reaisStr(per.receita)],["Receita paga (R$)",reaisStr(per.receita_paga)],["Novos participantes",per.novos_participantes]];csvDownload("metricas-palletbox.csv",rows);};});
   // ---- Ver lances: export + cancelar
-  document.querySelectorAll("[data-bids-export]").forEach(function(b){b.onclick=function(){var bids=S.admLotBids;if(!bids||bids.__err||!bids.length)return;var l=(S.lots||[]).filter(function(x){return x.id===S.admLotBidsFor;})[0]||{};var rows=[["#","Participante","WhatsApp","Lance (R$)","Quando"]];bids.forEach(function(bd,i){rows.push([i+1,bd.nome||"",bd.whatsapp||"",reaisStr(bd.valor),fmtDT(bd.criado_em)]);});csvDownload("lances-lote-"+(l.numero||"")+".csv",rows);};});
+  document.querySelectorAll("[data-bids-export]").forEach(function(b){b.onclick=function(){var bids=S.admLotBids;if(!bids||bids.__err||!bids.length)return;var l=(S.admLotLive&&S.admLotLive.lot)||{};var rows=[["#","Participante","WhatsApp","Lance (R$)","Quando"]];bids.forEach(function(bd,i){rows.push([i+1,bd.nome||"",bd.whatsapp||"",reaisStr(bd.valor),fmtDT(bd.criado_em)]);});csvDownload("lances-lote-"+(l.numero||"")+".csv",rows);};});
   document.querySelectorAll("[data-cancelbid]").forEach(function(b){b.onclick=async function(){if(!confirm("Cancelar este lance? O lance atual e o vencedor serão recalculados."))return;var r=await sb.rpc("admin_cancel_bid",{p_bid:this.getAttribute("data-cancelbid")});if(r.error){toast("Erro: "+(r.error.message||""),"bad");return;}await loadLots();await loadLotBids(S.admLotBidsFor,true);toast("Lance cancelado.","ok");render();};});
   // ---- Participantes
   var pq=$("partQ");if(pq){pq.oninput=function(){S.partQ=this.value;};}
