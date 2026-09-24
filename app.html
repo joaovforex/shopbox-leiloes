@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PalletBox Leilões</title>
-<meta name="description" content="Leilões de lotes e pallets para revenda — ShopBox.">
+<meta name="description" content="PalletBox Leilões — leilões online de lotes e pallets para revenda. Veja fotos, lista de itens e dê seu lance.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PalletBox Leilões">
+<meta property="og:title" content="PalletBox Leilões — lotes e pallets para revenda">
+<meta property="og:description" content="Leilões online de lotes e pallets. Veja fotos, lista de itens e dê seu lance.">
+<meta property="og:url" content="https://www.palletbox.com.br/app">
+<meta property="og:image" content="https://voxnmfnyfubzvodylxos.supabase.co/storage/v1/object/public/lotes/brand/palletbox-mark.webp">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#FC3C01">
 <link rel="icon" type="image/webp" href="https://voxnmfnyfubzvodylxos.supabase.co/storage/v1/object/public/lotes/brand/palletbox-mark.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1168,6 +1176,8 @@ function openBidReview(l,valorCents){
     +'<div class="kv"><span class="k">Total estimado</span><span class="v">'+(S.config.pagamento?'<span class="muted">A confirmar</span>':'<span class="muted">A confirmar</span>')+'</span></div>'
     +'<div class="kv"><span class="k">Pagamento</span><span class="v">Pix / WhatsApp</span></div>'
     +'<div class="kv"><span class="k">Retirada / entrega</span><span class="v">'+(S.config.retirada?esc(S.config.retirada):'<span class="muted">A confirmar</span>')+'</span></div>'
+    +((S.session&&l.vencedor_id===S.session.user.id)?'<div class="note warn" style="margin-bottom:8px"><svg><use href="#i-info"/></svg><span>Você <b>já é o maior lance</b> neste lote. Um novo lance aumenta o valor que você vai pagar.</span></div>':'')
+    +(valorCents>=Math.max(curVal(l),minBid(l))*3?'<div class="note warn" style="margin-bottom:8px"><svg><use href="#i-info"/></svg><span><b>Atenção ao valor:</b> seu lance é '+fmtN(Math.round(valorCents/Math.max(1,curVal(l))))+'x o lance atual ('+brl(curVal(l))+'). Confira se digitou certo.</span></div>':'')
     +'<div class="note"><svg><use href="#i-info"/></svg><span>Taxas e total podem ser definidos por pregão. <a href="#/ajuda" style="color:var(--brand)">Ver regras</a>.</span></div>'
     +'<button class="btn btn-primary btn-block" id="bmConfirm" style="margin-top:12px">Confirmar lance de '+brl(valorCents)+'</button>'
     +'</div></div>';
@@ -1177,7 +1187,7 @@ function openBidReview(l,valorCents){
   $("bmConfirm").onclick=async function(){
     var btn=this;btn.disabled=true;btn.textContent="Processando…";
     var r=await sb.rpc("place_bid",{p_lot_id:l.id,p_valor:valorCents});
-    if(r.error){btn.disabled=false;btn.textContent="Confirmar lance de "+brl(valorCents);toast("Erro ao registrar o lance. Tente novamente.","bad");return;}
+    if(r.error){btn.disabled=false;btn.textContent="Confirmar lance de "+brl(valorCents);var em=String((r.error&&r.error.message)||"");toast(em.indexOf("usuario_bloqueado")>=0?ERR.usuario_bloqueado:(em.indexOf("permission denied")>=0?ERR.nao_autenticado:"Erro ao registrar o lance. Tente novamente."),"bad");return;}
     var res=r.data;
     if(!res||!res.ok){
       btn.disabled=false;btn.textContent="Confirmar lance de "+brl(valorCents);
