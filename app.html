@@ -371,6 +371,13 @@ var S = { session:null, profile:null, lots:[], config:{}, agenda:[], route:{name
 function $(id){return document.getElementById(id);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
 function brl(cents){return "R$ "+(Number(cents||0)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtN(n,dec){var x=Number(n);if(n==null||n===""||isNaN(x))return n==null?"0":String(n);return x.toLocaleString("pt-BR",{minimumFractionDigits:dec||0,maximumFractionDigits:dec!=null?dec:2});}
+function centsInput(c){return (Number(c||0)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtQtd(t){if(t==null)return "";var s=String(t).trim();var m=s.match(/^(≈\s*|~\s*|aprox\.?\s*)?(\d{1,3}(?:[.,]\d{3})+|\d+)(\s.*)?$/i);if(!m)return s;var num=parseInt(m[2].replace(/[.,]/g,""),10);if(isNaN(num))return s;return (m[1]||"")+num.toLocaleString("pt-BR")+(m[3]||"");}
+function moneyMaskFormat(v){v=String(v||"").replace(/[^\d,]/g,"");var i=v.indexOf(",");var ip=i>=0?v.slice(0,i):v,dp=i>=0?v.slice(i+1).replace(/,/g,"").slice(0,2):null;ip=ip.replace(/^0+(?=\d)/,"");var ipf=ip?Number(ip).toLocaleString("pt-BR"):(dp!=null?"0":"");return ipf+(dp!=null?","+dp:"");}
+function bindMoney(inp){if(!inp||inp.__money)return;inp.__money=1;inp.setAttribute("inputmode","decimal");
+  inp.addEventListener("input",function(){var pos=inp.selectionStart||0,before=inp.value.slice(0,pos).replace(/[^\d,]/g,"").length;var nv=moneyMaskFormat(inp.value);inp.value=nv;var k=0,np=nv.length;for(var j=0;j<nv.length;j++){if(/[\d,]/.test(nv[j]))k++;if(k>=before){np=j+1;break;}}if(before===0)np=0;try{inp.setSelectionRange(np,np);}catch(e){}});
+  inp.addEventListener("blur",function(){if(inp.value.trim()==="")return;inp.value=centsInput(reaisToCents(inp.value));});}
 function reaisToCents(v){v=String(v).replace(/[^\d,.-]/g,"").replace(/\./g,"").replace(",",".");var n=parseFloat(v);return isNaN(n)?0:Math.round(n*100);}
 function fmtDT(iso){if(!iso)return "—";var d=new Date(iso);return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",timeZone:"America/Sao_Paulo"})+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit",timeZone:"America/Sao_Paulo"});}
 function minBid(l){return (l.total_lances===0)?l.lance_inicial:(l.lance_atual+l.incremento);}
@@ -521,7 +528,7 @@ function lotCard(l){
     +'<div class="cbody">'
       +'<div class="ccat">'+esc(l.categoria||"")+'</div>'
       +'<div class="ctit">'+esc(l.titulo)+'</div>'
-      +'<div class="cmeta">'+esc(l.condicao||"")+(l.qtd_estimada?' · '+esc(l.qtd_estimada):"")+(lotSheet(l)?' · <b style="color:var(--brand)">Lista de itens disponível</b>':"")+'</div>'
+      +'<div class="cmeta">'+esc(l.condicao||"")+(l.qtd_estimada?' · '+esc(fmtQtd(l.qtd_estimada)):"")+(lotSheet(l)?' · <b style="color:var(--brand)">Lista de itens disponível</b>':"")+'</div>'
       +'<div class="pricerow"><div><div class="lbl">'+(l.total_lances>0?"Lance atual":"Lance inicial")+'</div><div class="val big">'+brl(curVal(l))+'</div></div>'
         +'<div style="text-align:right"><div class="lbl">Próximo mínimo</div><div class="val">'+brl(minBid(l))+'</div></div></div>'
       +(enc?'<div class="closed">Encerrado em '+fmtDT(l.encerra_em)+'</div>'
@@ -573,12 +580,12 @@ function vLote(){
   var sh=lotSheet(l);
   var mine=S.session&&l.vencedor_id===S.session.user.id;
   var box = enc
-    ? '<div class="lbl">Resultado</div><div class="price">'+brl(curVal(l))+'</div><div class="muted" style="font-size:13px;margin-top:4px">'+(l.total_lances>0?(l.total_lances+" lance(s) · encerrado"):"Encerrado sem lances")+'</div>'
+    ? '<div class="lbl">Resultado</div><div class="price">'+brl(curVal(l))+'</div><div class="muted" style="font-size:13px;margin-top:4px">'+(l.total_lances>0?(fmtN(l.total_lances)+" lance(s) · encerrado"):"Encerrado sem lances")+'</div>'
       +(mine?'<div class="note ok" style="margin-top:12px"><svg><use href="#i-check"/></svg><span>Você arrematou este lote. Nossa equipe entra em contato para combinar pagamento e retirada em <b>até 5 horas em dias úteis</b> (finais de semana e feriados: até 2 dias úteis). Acompanhe em <b>Minha conta → Arremates</b>.</span></div>':'')
     : '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="lbl">'+(l.total_lances>0?"Lance atual":"Lance inicial")+'</div><div class="price">'+brl(curVal(l))+'</div></div>'
         +'<div style="text-align:right"><div class="lbl">Encerra em</div><div class="mono" style="font-weight:700;font-size:18px;'+(lf.urgent?"color:var(--danger)":"")+'" data-cd="'+esc(l.encerra_em)+'">'+lf.txt+'</div></div></div>'
       +'<div class="muted" style="font-size:12.5px;margin-top:6px">Próximo lance mínimo: <b class="mono">'+brl(minBid(l))+'</b> · incremento de '+brl(l.incremento)+'</div>'
-      +'<div class="stepper"><button id="dec" aria-label="Diminuir">–</button><input id="bidv" class="mono" value="'+ (minBid(l)/100).toFixed(2).replace(".",",") +'" inputmode="decimal"><button id="inc" aria-label="Aumentar">+</button></div>'
+      +'<div class="stepper"><button id="dec" aria-label="Diminuir">–</button><input id="bidv" class="mono" data-money="1" value="'+ centsInput(minBid(l)) +'" inputmode="decimal"><button id="inc" aria-label="Aumentar">+</button></div>'
       +'<div class="quick"><button class="btn btn-line btn-sm" data-q="min">Mínimo</button><button class="btn btn-line btn-sm" data-q="1">+'+brl(l.incremento)+'</button><button class="btn btn-line btn-sm" data-q="2">+'+brl(l.incremento*2)+'</button></div>'
       +'<button class="btn btn-primary btn-block" id="bidBtn"><svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-gavel"/></svg> Dar lance</button>'
       +(mine?'<div class="note ok" style="margin-top:10px"><svg><use href="#i-check"/></svg><span>Você é o maior lance no momento.</span></div>':'')
@@ -591,7 +598,7 @@ function vLote(){
           +'<span class="gzoom"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>Ver foto completa</span>'
           +(fotos.length>1?'<button class="gnav prev" data-gal="-1" aria-label="Foto anterior">‹</button><button class="gnav next" data-gal="1" aria-label="Próxima foto">›</button><span class="gcount">'+(gi+1)+'/'+fotos.length+'</span>':'')):'<div class="noimg" style="text-align:center;color:var(--ink-3)"><svg style="width:40px;height:40px;opacity:.5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24"><use href="#i-img"/></svg><div style="margin-top:6px;font-size:13px">Fotos do lote em breve</div></div>')+'</div>'
         +(fotos.length>1?'<div class="thumbs">'+fotos.map(function(u,i){return '<button type="button" data-thumb="'+i+'" class="'+(i===gi?'on':'')+'" aria-label="Ver foto '+(i+1)+'"><img src="'+esc(u)+'" alt="" loading="lazy"></button>';}).join("")+'</div>':'')
-        +'<div style="margin:16px 0 4px;display:flex;gap:8px;flex-wrap:wrap"><span class="tag brand">'+esc(l.categoria||"Lote")+'</span><span class="tag">'+esc(l.condicao||"")+'</span>'+(l.qtd_estimada?'<span class="tag">'+esc(l.qtd_estimada)+'</span>':"")+'</div>'
+        +'<div style="margin:16px 0 4px;display:flex;gap:8px;flex-wrap:wrap"><span class="tag brand">'+esc(l.categoria||"Lote")+'</span><span class="tag">'+esc(l.condicao||"")+'</span>'+(l.qtd_estimada?'<span class="tag">'+esc(fmtQtd(l.qtd_estimada))+'</span>':"")+'</div>'
         +'<h1 style="font-size:26px;margin:6px 0 2px">'+esc(l.titulo)+'</h1><div class="muted mono" style="font-size:12px">LOTE #'+esc(l.numero)+'</div>'
         +(l.provavel_conteudo?'<div class="dtsec"><h3>Provável conteúdo</h3><p style="margin:0;color:var(--ink-2);font-size:14px">'+esc(l.provavel_conteudo)+'</p></div>':"")
         +(l.descricao?'<div class="dtsec"><h3>Descrição</h3><p class="desc" style="margin:0;color:var(--ink-2);font-size:14px">'+linkify(l.descricao)+'</p></div>':"")
@@ -600,7 +607,7 @@ function vLote(){
           +'</div>':"")
         +'<div class="dtsec"><h3>Condições do lote</h3>'
           +'<div class="kv"><span class="k">Estado dos produtos</span><span class="v">'+ac(l.condicao)+'</span></div>'
-          +'<div class="kv"><span class="k">Quantidade estimada</span><span class="v">'+ac(l.qtd_estimada)+'</span></div>'
+          +'<div class="kv"><span class="k">Quantidade estimada</span><span class="v">'+ac(fmtQtd(l.qtd_estimada))+'</span></div>'
           +'<div class="kv"><span class="k">Local de retirada</span><span class="v">'+ac(l.local_retirada||S.config.endereco)+'</span></div>'
           +'<div class="kv"><span class="k">Entrega</span><span class="v">'+ac(S.config.retirada)+'</span></div>'
           +'<div class="kv"><span class="k">Taxas / comissão</span><span class="v">'+ac(S.config.pagamento)+'</span></div>'
@@ -616,8 +623,8 @@ function lotAdminPanel(l){
   var d=S.curLotLive; if(!d)return '<div class="dtsec admpanel"><h3>Painel do admin</h3><p class="muted" style="margin:0;font-size:13px">Carregando dados do admin…</p></div>';
   var parts=d.participantes||[], bids=(d.lances||[]).slice(0,8), st=d.stats||{};
   return '<div class="dtsec admpanel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">Painel do admin <span class="muted" style="font-weight:600;font-size:12px">· só você vê</span></h3><button class="btn btn-primary btn-sm" data-golot="'+esc(l.id)+'">Abrir painel completo</button></div>'
-    +'<p class="muted" style="font-size:12.5px;margin:6px 0 10px">'+(l.status==="aberto"?'<span class="live-dot"></span>Ao vivo · ':'')+(st.participantes||0)+' participante(s) · '+(st.lances||0)+' lance(s) · último '+esc(ago(st.ultimo_lance_em))+'</p>'
-    +(parts.length?'<table class="rank"><thead><tr><th>Participante</th><th>Score</th><th>Lances</th><th>Maior</th></tr></thead><tbody>'+parts.map(function(p){return '<tr class="'+(p.lider?"lead":"")+'"><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+'</td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+esc(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td></tr>';}).join("")+'</tbody></table>':'<p class="muted" style="margin:0;font-size:13px">Sem participantes ainda.</p>')
+    +'<p class="muted" style="font-size:12.5px;margin:6px 0 10px">'+(l.status==="aberto"?'<span class="live-dot"></span>Ao vivo · ':'')+fmtN(st.participantes)+' participante(s) · '+fmtN(st.lances)+' lance(s) · último '+esc(ago(st.ultimo_lance_em))+'</p>'
+    +(parts.length?'<table class="rank"><thead><tr><th>Participante</th><th>Score</th><th>Lances</th><th>Maior</th></tr></thead><tbody>'+parts.map(function(p){return '<tr class="'+(p.lider?"lead":"")+'"><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+'</td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+fmtN(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td></tr>';}).join("")+'</tbody></table>':'<p class="muted" style="margin:0;font-size:13px">Sem participantes ainda.</p>')
     +(bids.length?'<div class="feed" style="margin-top:10px">'+bids.map(function(b){return '<div class="it"><div class="av">'+esc(initials(b.nome))+'</div><div>'+prLink(b.user_id,b.nome)+'<div class="meta">'+esc(ago(b.criado_em))+'</div></div><div class="val">'+brl(b.valor)+'</div></div>';}).join("")+'</div>':'')
     +'</div>';
 }
@@ -794,7 +801,7 @@ async function loadMetrics(){
   if(S.route.name==="admin"&&S.admTab==="metricas") render();
 }
 function deltaBadge(cur,prev){cur=cur||0;prev=prev||0;if(prev===0){return cur>0?'<span style="color:var(--success);font-size:12px">novo</span>':'';}var p=Math.round((cur-prev)/prev*100);var col=p>=0?'var(--success)':'var(--danger)';return '<span style="color:'+col+';font-size:12px">'+(p>=0?'▲':'▼')+' '+Math.abs(p)+'%</span>';}
-function kpi(lbl,val){return '<div class="tile"><div class="lbl">'+lbl+'</div><div class="num">'+val+'</div></div>';}
+function kpi(lbl,val){if(typeof val==="number")val=fmtN(val);return '<div class="tile"><div class="lbl">'+lbl+'</div><div class="num">'+val+'</div></div>';}
 function trendChart(trend){
   if(!trend||!trend.length) return '<p class="muted" style="font-size:13px;margin:0">Sem dados ainda.</p>';
   var max=1; trend.forEach(function(d){max=Math.max(max,d.lances||0,d.arremates||0);});
@@ -818,18 +825,18 @@ function admMetrics(){
   var k=m.kpis||{}, per=m.periodo||{}, prev=m.periodo_anterior||{}, d=m.periodo_dias||30;
   function pchip(n){return '<button class="chip '+((S.metricsDays||30)===n?"on":"")+'" data-metrics-days="'+n+'">'+n+' dias</button>';}
   var head='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px"><h3 style="margin:0">Visão geral</h3><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><div class="cats" style="margin:0">'+pchip(7)+pchip(30)+pchip(90)+'</div><button class="btn btn-line btn-sm" data-metrics-refresh="1">Atualizar</button><button class="btn btn-ghost btn-sm" data-metrics-export="1">Exportar CSV</button></div></div>';
-  var kpis='<div class="tiles">'+kpi("Lotes abertos",k.lotes_abertos||0)+kpi("Lotes encerrados",k.lotes_encerrados||0)+kpi("Total de lances",k.total_lances||0)+kpi("Participantes",k.participantes_unicos||0)+kpi("Arremates",k.arremates_total||0)+kpi("Valor arrematado",brl(k.valor_arrematado||0))+kpi("Ticket médio",brl(k.ticket_medio||0))+kpi("Taxa de conversão",(k.taxa_conversao||0)+"%")+kpi("Média lances/lote",k.media_lances_lote||0)+'</div>';
+  var kpis='<div class="tiles">'+kpi("Lotes abertos",k.lotes_abertos||0)+kpi("Lotes encerrados",k.lotes_encerrados||0)+kpi("Total de lances",k.total_lances||0)+kpi("Participantes",k.participantes_unicos||0)+kpi("Arremates",k.arremates_total||0)+kpi("Valor arrematado",brl(k.valor_arrematado||0))+kpi("Ticket médio",brl(k.ticket_medio||0))+kpi("Taxa de conversão",fmtN(k.taxa_conversao||0,null)+"%")+kpi("Média lances/lote",Number(k.media_lances_lote||0))+'</div>';
   var period='<div class="dtsec" style="margin-top:16px"><h3>Últimos '+d+' dias</h3><div class="tiles">'
-    +'<div class="tile"><div class="lbl">Lances</div><div class="num">'+(per.lances||0)+' '+deltaBadge(per.lances,prev.lances)+'</div></div>'
-    +'<div class="tile"><div class="lbl">Arremates</div><div class="num">'+(per.arremates||0)+' '+deltaBadge(per.arremates,prev.arremates)+'</div></div>'
+    +'<div class="tile"><div class="lbl">Lances</div><div class="num">'+fmtN(per.lances)+' '+deltaBadge(per.lances,prev.lances)+'</div></div>'
+    +'<div class="tile"><div class="lbl">Arremates</div><div class="num">'+fmtN(per.arremates)+' '+deltaBadge(per.arremates,prev.arremates)+'</div></div>'
     +'<div class="tile"><div class="lbl">Receita arrematada</div><div class="num" style="font-size:18px">'+brl(per.receita||0)+' '+deltaBadge(per.receita,prev.receita)+'</div></div>'
     +'<div class="tile"><div class="lbl">Receita paga</div><div class="num" style="font-size:18px">'+brl(per.receita_paga||0)+'</div></div>'
-    +'<div class="tile"><div class="lbl">Novos participantes</div><div class="num">'+(per.novos_participantes||0)+'</div></div>'
+    +'<div class="tile"><div class="lbl">Novos participantes</div><div class="num">'+fmtN(per.novos_participantes)+'</div></div>'
     +'</div><p class="muted" style="font-size:12px;margin:8px 0 0">Comparação (▲/▼) contra os '+d+' dias anteriores.</p></div>';
   var abs=m.arremates_by_status||[];
   var stat='<div class="dtsec" style="margin-top:16px"><h3>Arremates por situação</h3>'+(abs.length?('<table class="adm"><thead><tr><th>Situação</th><th>Qtd.</th><th>Valor</th></tr></thead><tbody>'+abs.map(function(a){return '<tr><td>'+statusLabel(a.status)+'</td><td class="mono">'+a.qtd+'</td><td class="mono">'+brl(a.valor)+'</td></tr>';}).join("")+'</tbody></table>'):'<p class="muted" style="font-size:13px;margin:0">Nenhum arremate ainda.</p>')+'</div>';
   var tl=m.top_lots||[];
-  var rank='<div class="dtsec" style="margin-top:16px"><h3>Lotes mais disputados</h3>'+(tl.length?('<table class="adm"><thead><tr><th>#</th><th>Título</th><th>Lances</th><th>Atual</th></tr></thead><tbody>'+tl.map(function(l){return '<tr><td class="mono">'+esc(l.numero)+'</td><td>'+esc(l.titulo)+'</td><td class="mono">'+(l.total_lances||0)+'</td><td class="mono">'+brl(l.total_lances>0?l.lance_atual:l.lance_inicial)+'</td></tr>';}).join("")+'</tbody></table>'):'<p class="muted" style="font-size:13px;margin:0">Nenhum lote ainda.</p>')+(m.lotes_sem_lances!=null?('<p class="muted" style="font-size:12px;margin:8px 0 0">'+m.lotes_sem_lances+' lote(s) sem lances.</p>'):"")+'</div>';
+  var rank='<div class="dtsec" style="margin-top:16px"><h3>Lotes mais disputados</h3>'+(tl.length?('<table class="adm"><thead><tr><th>#</th><th>Título</th><th>Lances</th><th>Atual</th></tr></thead><tbody>'+tl.map(function(l){return '<tr><td class="mono">'+esc(l.numero)+'</td><td>'+esc(l.titulo)+'</td><td class="mono">'+fmtN(l.total_lances)+'</td><td class="mono">'+brl(l.total_lances>0?l.lance_atual:l.lance_inicial)+'</td></tr>';}).join("")+'</tbody></table>'):'<p class="muted" style="font-size:13px;margin:0">Nenhum lote ainda.</p>')+(m.lotes_sem_lances!=null?('<p class="muted" style="font-size:12px;margin:8px 0 0">'+fmtN(m.lotes_sem_lances)+' lote(s) sem lances.</p>'):"")+'</div>';
   var trend='<div class="dtsec" style="margin-top:16px"><h3>Tendência ('+d+' dias)</h3>'+trendChart(m.trend)+'</div>';
   return head+kpis+period+stat+rank+trend;
 }
@@ -852,7 +859,7 @@ function admLotBidsView(){
   if(S.admLotBidsLoading && !S.admLotLive){ return head+'<div class="empty"><svg><use href="#i-gavel"/></svg><b>Carregando lote…</b></div>'; }
   if(bids&&bids.__err){ return head+'<div class="note warn"><svg><use href="#i-info"/></svg><span>Não foi possível carregar ('+esc(bids.__err)+'). Confirme que sua conta é admin.</span></div>'; }
   var lf=left(l.encerra_em);
-  function kp(lb,v,extra){return '<div class="lv-k"><div class="l">'+lb+'</div><div class="v" '+(extra||"")+'>'+v+'</div></div>';}
+  function kp(lb,v,extra){if(typeof v==="number")v=fmtN(v);return '<div class="lv-k"><div class="l">'+lb+'</div><div class="v" '+(extra||"")+'>'+v+'</div></div>';}
   var kpis='<div class="lv-kpis">'
     +kp(l.total_lances>0?"Lance atual":"Lance inicial",brl(l.lance_atual||l.lance_inicial))
     +kp("Líder",leader?prLink(leader.user_id,maskName(leader.nome)):'—','style="font-family:var(--body);font-size:15px"')
@@ -863,7 +870,7 @@ function admLotBidsView(){
   +'</div>';
   var rank='<div class="lv-card"><h4>Participantes neste lote <span class="muted" style="font-weight:600">'+parts.length+'</span></h4>'
     +(parts.length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>#</th><th>Participante</th><th>Score</th><th>Lances</th><th>Maior lance</th><th>Último</th><th></th></tr></thead><tbody>'
-      +parts.map(function(p,i){var wl=waHref(p.whatsapp);return '<tr class="'+(p.lider?"lead":"")+'"><td class="mono">'+(i+1)+'</td><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+(p.blocked?' <span class="tag warn">bloqueado</span>':'')+'<div class="meta muted" style="font-size:11.5px">'+esc(p.cidade||"")+'</div></td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+esc(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td><td style="white-space:nowrap;font-size:12px">'+esc(ago(p.ultimo_em))+'</td><td style="white-space:nowrap">'+(wl?'<a class="btn btn-ghost btn-sm" style="padding:3px 8px" target="_blank" rel="noopener" href="'+wl+'" title="WhatsApp">WhatsApp</a>':'')+'</td></tr>';}).join("")
+      +parts.map(function(p,i){var wl=waHref(p.whatsapp);return '<tr class="'+(p.lider?"lead":"")+'"><td class="mono">'+(i+1)+'</td><td>'+prLink(p.user_id,p.nome)+(p.lider?' <span class="tag ok">líder</span>':'')+(p.blocked?' <span class="tag warn">bloqueado</span>':'')+'<div class="meta muted" style="font-size:11.5px">'+esc(p.cidade||"")+'</div></td><td>'+scoreBadge(p.confianca)+'</td><td class="mono">'+fmtN(p.n_lances)+'</td><td class="mono">'+brl(p.maior)+'</td><td style="white-space:nowrap;font-size:12px">'+esc(ago(p.ultimo_em))+'</td><td style="white-space:nowrap">'+(wl?'<a class="btn btn-ghost btn-sm" style="padding:3px 8px" target="_blank" rel="noopener" href="'+wl+'" title="WhatsApp">WhatsApp</a>':'')+'</td></tr>';}).join("")
       +'</tbody></table></div>':'<p class="muted" style="margin:0;font-size:13px">Ninguém deu lance ainda.</p>')+'</div>';
   var feed='<div class="lv-card"><h4>Lances em tempo real <span class="muted" style="font-weight:600">'+((bids&&bids.length)||0)+'</span></h4>'
     +(bids&&bids.length?'<div class="feed">'+bids.map(function(b,i){return '<div class="it'+(i===0?" top":"")+'"><div class="av">'+esc(initials(b.nome))+'</div><div style="min-width:0"><div>'+prLink(b.user_id,b.nome)+(i===0?' <span class="tag ok">maior lance</span>':'')+'</div><div class="meta">'+esc(fmtDT(b.criado_em))+' · '+esc(ago(b.criado_em))+'</div></div><div style="text-align:right"><div class="val">'+brl(b.valor)+'</div><button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:11.5px" data-cancelbid="'+esc(b.bid_id)+'" title="Cancelar este lance">Cancelar</button></div></div>';}).join("")+'</div>'
@@ -897,7 +904,7 @@ function renderReport(){
     var p=x.perfil||{},c=x.confianca||{},k=x.kpis||{};
     var cor={alto:"var(--success)",medio:"var(--gold)",baixo:"#E06A1B",risco:"var(--danger)"}[c.nivel]||"var(--ink-3)";
     var taxa=k.lotes?Math.round(100*(k.vencidos||0)/k.lotes):0;
-    function kp(l,v){return '<div class="lv-k"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>';}
+    function kp(l,v){if(typeof v==="number")v=fmtN(v);return '<div class="lv-k"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>';}
     var wl=waHref(p.whatsapp,"Olá "+((p.nome||"").split(" ")[0]||"")+"! Aqui é da PalletBox Leilões.");
     body='<div class="pr-id"><div class="av">'+esc(initials(p.nome))+'</div><div style="min-width:0"><h2>'+esc(p.nome||"Sem nome")+'</h2>'
         +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">'+(p.role==="admin"?'<span class="tag ok">admin</span>':'')+(p.blocked?'<span class="tag warn">bloqueado</span>':'')+'<span class="tag">'+esc(p.cidade||"Cidade não informada")+'</span></div></div></div>'
@@ -923,7 +930,7 @@ function renderReport(){
         +'<dt>ID</dt><dd class="mono" style="font-size:11px;font-weight:400">'+esc(p.user_id||"")+'</dd></dl></div>'
       +'<div class="lv-card"><h4>Lotes em que participou <span class="muted" style="font-weight:600">'+(x.lotes||[]).length+'</span></h4>'
         +((x.lotes||[]).length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>Lote</th><th>Status</th><th>Lances</th><th>Maior dele</th><th>Atual</th><th>Resultado</th></tr></thead><tbody>'
-          +(x.lotes||[]).map(function(l){return '<tr><td><button type="button" class="lnk" data-golot="'+esc(l.lot_id)+'">#'+esc(l.numero)+' '+esc(l.titulo||"")+'</button></td><td>'+statusChip(l.status)+'</td><td class="mono">'+esc(l.meus_lances)+'</td><td class="mono">'+brl(l.meu_maior)+'</td><td class="mono">'+brl(l.lance_atual||l.lance_inicial)+'</td><td><span class="res '+esc(l.resultado)+'">'+esc(RESL[l.resultado]||l.resultado)+'</span></td></tr>';}).join("")
+          +(x.lotes||[]).map(function(l){return '<tr><td><button type="button" class="lnk" data-golot="'+esc(l.lot_id)+'">#'+esc(l.numero)+' '+esc(l.titulo||"")+'</button></td><td>'+statusChip(l.status)+'</td><td class="mono">'+fmtN(l.meus_lances)+'</td><td class="mono">'+brl(l.meu_maior)+'</td><td class="mono">'+brl(l.lance_atual||l.lance_inicial)+'</td><td><span class="res '+esc(l.resultado)+'">'+esc(RESL[l.resultado]||l.resultado)+'</span></td></tr>';}).join("")
           +'</tbody></table></div>':'<p class="muted" style="margin:0;font-size:13px">Ainda não deu lances.</p>')+'</div>'
       +'<div class="lv-card"><h4>Arremates e pagamentos <span class="muted" style="font-weight:600">'+(x.arremates||[]).length+'</span></h4>'
         +((x.arremates||[]).length?'<div style="overflow-x:auto"><table class="rank"><thead><tr><th>Lote</th><th>Valor</th><th>Situação</th><th>Pago</th><th>Data</th></tr></thead><tbody>'
@@ -954,7 +961,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&S.prUser&&!
 /* ===== ADMIN: helpers (CSV, WhatsApp) ===== */
 function csvCell(v){v=v==null?"":String(v);if(/[";\n\r]/.test(v)){v='"'+v.replace(/"/g,'""')+'"';}return v;}
 function csvDownload(name,rows){try{var bom="﻿";var txt=bom+rows.map(function(r){return r.map(csvCell).join(";");}).join("\r\n");var blob=new Blob([txt],{type:"text/csv;charset=utf-8"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},600);toast("CSV exportado.","ok");}catch(e){toast("Não foi possível exportar.","bad");}}
-function reaisStr(cents){return (Number(cents||0)/100).toFixed(2).replace(".",",");}
+function reaisStr(cents){return centsInput(cents);}
 function waHref(whats,text){var wa=(whats||"").replace(/\D/g,"");if(!wa)return "";wa=(wa.length<=11?"55"+wa:wa);return "https://wa.me/"+wa+(text?("?text="+encodeURIComponent(text)):"");}
 
 /* ===== ADMIN: participantes ===== */
@@ -973,14 +980,14 @@ function admParticipants(){
   var q=(S.partQ||"").toLowerCase();
   var list=p.filter(function(u){return !q||((u.nome||"")+" "+(u.whatsapp||"")+" "+(u.cidade||"")).toLowerCase().indexOf(q)>=0;});
   var head='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px"><div class="search" style="max-width:280px"><svg><use href="#i-search"/></svg><input id="partQ" placeholder="Buscar participante…" value="'+esc(S.partQ)+'"></div><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" data-part-export="1">Exportar CSV</button><button class="btn btn-line btn-sm" data-part-refresh="1">Atualizar</button></div></div>'
-    +'<p class="muted" style="font-size:13px;margin:0 0 12px">'+p.length+' participante(s) cadastrado(s).</p>';
+    +'<p class="muted" style="font-size:13px;margin:0 0 12px">'+fmtN(p.length)+' participante(s) cadastrado(s).</p>';
   if(!list.length){return head+'<div class="empty"><svg><use href="#i-user"/></svg><b>Nenhum participante</b>Ninguém encontrado para essa busca.</div>';}
   var rows=list.map(function(u){
     var wl=waHref(u.whatsapp);var isAdmin=u.role==='admin';
     return '<tr'+(u.blocked?' style="opacity:.55"':'')+'>'
       +'<td>'+prLink(u.user_id,u.nome||"—")+(isAdmin?' <span class="tag ok">admin</span>':'')+(u.blocked?' <span class="tag warn">bloqueado</span>':'')+'</td><td>'+scoreBadge({score:u.score,nivel:u.nivel})+'</td>'
       +'<td class="mono">'+esc(u.whatsapp||"—")+'</td><td>'+esc(u.cidade||"—")+'</td>'
-      +'<td class="mono">'+(u.n_lances||0)+'</td><td class="mono">'+(u.n_arremates||0)+'</td><td class="mono">'+brl(u.total_arrematado||0)+'</td>'
+      +'<td class="mono">'+fmtN(u.n_lances)+'</td><td class="mono">'+fmtN(u.n_arremates)+'</td><td class="mono">'+brl(u.total_arrematado||0)+'</td>'
       +'<td>'+esc(u.ultimo_acesso?fmtDT(u.ultimo_acesso):"—")+'</td>'
       +'<td style="white-space:nowrap">'
         +'<button class="btn btn-line btn-sm" data-pr="'+esc(u.user_id)+'">Relatório</button> '
@@ -1029,7 +1036,7 @@ function openPayModal(id){
   m.innerHTML='<div class="box"><div class="mhead"><h3>Registrar pagamento</h3><button class="mclose" id="payClose"><svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-close"/></svg></button></div>'
     +'<div class="mbody">'
     +'<p class="muted" style="font-size:13px;margin:0 0 12px">Lote #'+esc(x.numero||"")+' — '+esc(x.titulo||"")+' · '+esc(x.nome||"")+'</p>'
-    +'<div class="field"><label>Valor pago (R$)</label><input id="payValor" value="'+esc(x.valor!=null?reaisStr(x.valor):"")+'"></div>'
+    +'<div class="field"><label>Valor pago (R$)</label><input id="payValor" data-money="1" value="'+esc(x.valor!=null?reaisStr(x.valor):"")+'"></div>'
     +'<div class="field"><label>Método</label><select id="payMetodo">'+["Pix","Dinheiro","Transferência","Cartão","Outro"].map(function(o){return '<option value="'+o+'" '+((x.metodo_pagamento||"Pix")===o?"selected":"")+'>'+o+'</option>';}).join("")+'</select></div>'
     +'<div class="field"><label>Link do comprovante (opcional)</label><input id="payComp" placeholder="https://…" value="'+esc(x.comprovante_url||"")+'"></div>'
     +'<label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-top:6px"><input type="checkbox" id="payMark" '+(x.status==="aguardando_pagamento"?"checked":"")+'> Marcar como pago</label>'
@@ -1037,7 +1044,7 @@ function openPayModal(id){
     +'<div style="display:flex;gap:8px;margin-top:14px"><button class="btn btn-line btn-block" id="payCancel">Cancelar</button><button class="btn btn-primary btn-block" id="paySave">Salvar</button></div>'
     +'</div>';
   document.body.appendChild(m);
-  function close(){m.remove();}
+  bindAllMoney();function close(){m.remove();}
   m.querySelector("#payClose").onclick=close;m.querySelector("#payCancel").onclick=close;
   m.onclick=function(e){if(e.target===m)close();};
   m.querySelector("#paySave").onclick=async function(){
@@ -1100,7 +1107,7 @@ function lotForm(l){
     +'<div class="field"><label>Planilha de itens e valores (link do Google Sheets)</label><input name="planilha_url" type="url" inputmode="url" value="'+esc(v("planilha_url"))+'" placeholder="https://docs.google.com/spreadsheets/d/..."><div class="muted" style="font-size:12px;margin-top:4px">No Google Sheets: <b>Compartilhar → Acesso geral → Qualquer pessoa com o link → Leitor</b>, copie o link e cole aqui. O cliente verá a planilha na página do lote.</div></div>'
     +'<div class="field"><label>Local de retirada</label><input name="local_retirada" value="'+esc(v("local_retirada"))+'"></div>'
     +'<div class="field"><label>Fotos do lote</label><div id="fotoPrev" class="fotoprev"></div><input type="file" id="fotoInput" accept="image/*" multiple capture="environment"><div class="muted" style="font-size:12px;margin-top:4px">Envie do computador ou do celular. A primeira foto é a capa. Você pode enviar várias.</div></div>'
-    +'<div class="formrow"><div class="field"><label>Lance inicial (R$) *</label><input name="lance_inicial" value="'+esc(l.lance_inicial!=null?(l.lance_inicial/100).toFixed(2).replace(".",","):"")+'" required placeholder="1600,00"></div><div class="field"><label>Incremento (R$) *</label><input name="incremento" value="'+esc(l.incremento!=null?(l.incremento/100).toFixed(2).replace(".",","):"50,00")+'" required></div></div>'
+    +'<div class="formrow"><div class="field"><label>Lance inicial (R$) *</label><input name="lance_inicial" data-money="1" value="'+esc(l.lance_inicial!=null?centsInput(l.lance_inicial):"")+'" required placeholder="1.600,00"></div><div class="field"><label>Incremento (R$) *</label><input name="incremento" data-money="1" value="'+esc(l.incremento!=null?centsInput(l.incremento):"50,00")+'" required></div></div>'
     +'<div class="formrow"><div class="field"><label>Abre em</label><input name="abre_em" type="datetime-local" value="'+esc(toLocalInput(l.abre_em))+'"></div><div class="field"><label>Encerra em *</label><input name="encerra_em" type="datetime-local" value="'+esc(toLocalInput(l.encerra_em))+'"></div></div>'
     +'<div class="field"><label>Status</label><select name="status">'+["rascunho","agendado","aberto","encerrado","cancelado"].map(function(s){return '<option value="'+s+'" '+(v("status","rascunho")===s?"selected":"")+'>'+s+'</option>';}).join("")+'</select></div>'
     +'<button class="btn btn-primary btn-sm" type="submit">'+(l.id?"Salvar lote":"Criar lote")+'</button>'+(l.id?' <button class="btn btn-ghost btn-sm" type="button" data-cancel="1">Cancelar</button>':"")+'</form>';
@@ -1122,7 +1129,7 @@ function openDeleteLots(ids){
   m.innerHTML='<div class="box"><div class="mhead"><h3>'+(lots.length>1?'Excluir '+lots.length+' lotes':'Excluir lote #'+esc(lots[0].numero))+'</h3><button class="mclose" id="dmClose" aria-label="Fechar"><svg style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><use href="#i-close"/></svg></button></div>'
     +'<div class="mbody">'
     +'<p style="margin:0 0 4px;font-size:14px">Esta ação é <b>permanente</b> e não pode ser desfeita.</p>'
-    +'<div class="dellist">'+lots.map(function(l){return '<div><span><b class="mono">#'+esc(l.numero)+'</b> '+esc(l.titulo||"")+'</span><span class="muted" style="white-space:nowrap">'+esc(l.status)+' · '+(l.total_lances||0)+' lance(s)'+(hasArr(l)?' · arremate':'')+'</span></div>';}).join("")+'</div>'
+    +'<div class="dellist">'+lots.map(function(l){return '<div><span><b class="mono">#'+esc(l.numero)+'</b> '+esc(l.titulo||"")+'</span><span class="muted" style="white-space:nowrap">'+esc(l.status)+' · '+fmtN(l.total_lances)+' lance(s)'+(hasArr(l)?' · arremate':'')+'</span></div>';}).join("")+'</div>'
     +(risky.length?'<div class="note warn" style="margin-bottom:10px"><svg><use href="#i-info"/></svg><span>'+(nL?'Serão apagados também <b>'+nL+' lance(s)</b>':'Lotes com atividade')+(risky.some(hasArr)?' e o(s) <b>arremate(s)</b> e registro de pagamento vinculados':'')+(risky.some(function(l){return l.status==="aberto";})?'. Há lote <b>aberto</b>; participantes perderão seus lances':'')+'. Para confirmar, digite <b>EXCLUIR</b> abaixo.</span></div>'
       +'<input id="dmType" autocomplete="off" placeholder="Digite EXCLUIR" style="margin-bottom:10px">':'')
     +'<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost btn-sm" id="dmCancel">Cancelar</button><button class="btn btn-danger btn-sm" id="dmGo" '+(risky.length?'disabled':'')+'>Excluir definitivamente</button></div>'
@@ -1299,7 +1306,9 @@ async function stepUpMfa(){
   return true;
 }
 
+function bindAllMoney(){document.querySelectorAll('input[data-money]').forEach(bindMoney);}
 function wire(){
+  bindAllMoney();
   var tb=$("themeBtn"),tb2=$("themeBtn2");
   function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("sbx_theme",t);}catch(e){}}
   function tog(){var c=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";setTheme(c);}
@@ -1327,7 +1336,7 @@ function wire(){
   if(bidBtn){
     var l=S.curLot;
     var inp=$("bidv");
-    function setv(c){inp.value=(c/100).toFixed(2).replace(".",",");}
+    function setv(c){inp.value=centsInput(c);}
     var dec=$("dec"),inc=$("inc");
     if(dec)dec.onclick=function(){var c=reaisToCents(inp.value)-l.incremento;if(c<minBid(l))c=minBid(l);setv(c);};
     if(inc)inc.onclick=function(){var c=reaisToCents(inp.value)+l.incremento;setv(c);};
